@@ -140,5 +140,4 @@ app.get('/api/hits/:clientId', auth, async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`AI Bot Tracker running on port ${PORT}`));
+module.exports = app;
