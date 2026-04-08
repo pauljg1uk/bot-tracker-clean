@@ -1,0 +1,10 @@
+artifacts/
+attached_assets/
+lib/
+scripts/
+node_modules/
+.replit
+replit.md
+*.lock
+tsconfig*.json
+.npmrc
