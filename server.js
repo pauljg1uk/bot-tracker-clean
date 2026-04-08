@@ -78,4 +78,60 @@ app.post('/api/clients', auth, async (req, res) => {
 app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM clients WHERE id = $1', [req.params.clientId]);
-    if (result.rows.length === 0) return res.status(4
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
+    const client = result.rows[0];
+    const appUrl = process.env.APP_URL || 'https://your-app.vercel.app';
+    const phpScript = `<?php
+// AI Bot Tracker — Paul Gordon SEO
+// Client: ${client.name} (${client.domain})
+define('TRACKER_API', '${appUrl}/api/hit');
+define('CLIENT_API_KEY', '${client.api_key}');
+$AI_BOTS = ['GPTBot'=>'GPTBot','ChatGPT-User'=>'ChatGPT-User','ClaudeBot'=>'ClaudeBot','Anthropic'=>'anthropic-ai','Google-Extended'=>'Google-Extended','PerplexityBot'=>'PerplexityBot','Bytespider'=>'Bytespider','CCBot'=>'CCBot','Meta-ExternalAgent'=>'Meta-ExternalAgent','Cohere'=>'cohere-ai','YouBot'=>'YouBot','Diffbot'=>'Diffbot','Applebot-Extended'=>'Applebot-Extended'];
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$matchedBot = null;
+foreach ($AI_BOTS as $name => $pattern) { if (stripos($userAgent, $pattern) !== false) { $matchedBot = $name; break; } }
+if ($matchedBot) {
+  $payload = json_encode(['api_key'=>CLIENT_API_KEY,'url'=>$_SERVER['REQUEST_URI']??'/','bot_name'=>$matchedBot,'user_agent'=>$userAgent,'status_code'=>http_response_code(),'country'=>$_SERVER['HTTP_CF_IPCOUNTRY']??null,'referrer'=>$_SERVER['HTTP_REFERER']??null]);
+  $context = stream_context_create(['http'=>['method'=>'POST','header'=>"Content-Type: application/json\r\nContent-Length: ".strlen($payload),'content'=>$payload,'timeout'=>2]]);
+  @file_get_contents(TRACKER_API, false, $context);
+}`;
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="bot-tracker.php"');
+    res.send(phpScript);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/stats/:clientId', auth, async (req, res) => {
+  const { clientId } = req.params;
+  const days = parseInt(req.query.days) || 30;
+  try {
+    const [totalHits, byBot, topPages, overTime] = await Promise.all([
+      pool.query(`SELECT COUNT(*) as total FROM bot_hits WHERE client_id = $1 AND timestamp > NOW() - INTERVAL '${days} days'`, [clientId]),
+      pool.query(`SELECT bot_name, COUNT(*) as hits FROM bot_hits WHERE client_id = $1 AND timestamp > NOW() - INTERVAL '${days} days' GROUP BY bot_name ORDER BY hits DESC`, [clientId]),
+      pool.query(`SELECT url, COUNT(*) as hits FROM bot_hits WHERE client_id = $1 AND timestamp > NOW() - INTERVAL '${days} days' GROUP BY url ORDER BY hits DESC LIMIT 10`, [clientId]),
+      pool.query(`SELECT DATE(timestamp) as date, COUNT(*) as hits FROM bot_hits WHERE client_id = $1 AND timestamp > NOW() - INTERVAL '${days} days' GROUP BY DATE(timestamp) ORDER BY date ASC`, [clientId])
+    ]);
+    res.json({ total: totalHits.rows[0].total, byBot: byBot.rows, topPages: topPages.rows, overTime: overTime.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/hits/:clientId', auth, async (req, res) => {
+  const { clientId } = req.params;
+  const days = parseInt(req.query.days) || 30;
+  try {
+    const result = await pool.query(
+      `SELECT * FROM bot_hits WHERE client_id = $1 AND timestamp > NOW() - INTERVAL '${days} days' ORDER BY timestamp DESC LIMIT 200`,
+      [clientId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`AI Bot Tracker running on port ${PORT}`));
