@@ -14,6 +14,10 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+pool.on('error', (err) => {
+  console.error('Pool error:', err.message);
+});
+
 const auth = (req, res, next) => {
   let encoded = null;
   const authHeader = req.headers.authorization;
