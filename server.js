@@ -36,7 +36,14 @@ const auth = (req, res, next) => {
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
+app.post('/api/auth', (req, res) => {
+  const { password } = req.body;
+  if (password === process.env.DASHBOARD_PASSWORD) {
+    res.json({ success: true, token: Buffer.from('admin:' + password).toString('base64') });
+  } else {
+    res.status(401).json({ error: 'Invalid password' });
+  }
+});
 app.post('/api/hit', async (req, res) => {
   const { api_key, url, bot_name, user_agent, status_code, country, referrer } = req.body;
   try {
