@@ -841,22 +841,26 @@
     empty.style.display = 'none';
     grid.style.display = 'block';
 
-    cardsEl.innerHTML = clients.map(c => {
-      const domain = (c.domain || '').replace(/^https?:\/\//, '');
-      return `<div class="client-card" onclick="selectClientCard(${c.id})">
-        <div class="cc-name">${escHtml(c.name)}</div>
-        <div class="cc-domain">${escHtml(domain)}</div>
-        <div class="cc-meta">
-          <div>
-            <div class="cc-hits" id="cc-hits-${c.id}">—</div>
-            <div class="cc-hits-label">hits (7d)</div>
-          </div>
-          <div class="cc-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+  cardsEl.innerHTML = clients.map(c => {
+  const domain = (c.domain || '').replace(/^https?:\/\//, '');
+  return `<div class="client-card" data-client-id="${c.id}">
+    <div class="cc-name">${escHtml(c.name)}</div>
+    <div class="cc-domain">${escHtml(domain)}</div>
+    <div class="cc-meta">
+      <div>
+        <div class="cc-hits" id="cc-hits-${c.id}">—</div>
+        <div class="cc-hits-label">hits (7d)</div>
+      </div>
+      <div class="cc-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+      </div>
+    </div>
+  </div>`;
+}).join('');
+
+cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
+  card.addEventListener('click', () => selectClientCard(card.dataset.clientId));
+});
 
     // Async-load hit counts per card
     clients.forEach(c => {
@@ -1567,32 +1571,38 @@
     document.getElementById('create-client-btn').textContent = 'Create Client';
     document.getElementById('add-client-modal').classList.add('open');
   }
+function openManageClients() {
+  fetch('/api/clients', { headers: authHeaders() })
+    .then(r => r.json())
+    .then(clients => {
+      const list = document.getElementById('manage-client-list');
+      if (!clients.length) {
+        list.innerHTML = '<div class="empty">No clients yet</div>';
+      } else {
+        list.innerHTML = clients.map(c => `
+          <div class="client-item" id="ci-${c.id}">
+            <div style="flex:1;min-width:0">
+              <div class="client-item-name">${escHtml(c.name)}</div>
+              <div class="client-item-domain">${escHtml(c.domain)}</div>
+              <div class="client-item-key">${escHtml(c.api_key)}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn-sm-ghost" style="padding:5px 12px;font-size:12px" data-edit-id="${c.id}">Edit</button>
+              <button class="btn-danger" data-delete-id="${c.id}">Delete</button>
+            </div>
+          </div>`).join('');
 
-  function openManageClients() {
-    fetch('/api/clients', { headers: authHeaders() })
-      .then(r => r.json())
-      .then(clients => {
-        const list = document.getElementById('manage-client-list');
-        if (!clients.length) {
-          list.innerHTML = '<div class="empty">No clients yet</div>';
-        } else {
-          list.innerHTML = clients.map(c => `
-            <div class="client-item" id="ci-${c.id}">
-              <div style="flex:1;min-width:0">
-                <div class="client-item-name">${escHtml(c.name)}</div>
-                <div class="client-item-domain">${escHtml(c.domain)}</div>
-                <div class="client-item-key">${escHtml(c.api_key)}</div>
-              </div>
-              <div style="display:flex;gap:6px;flex-shrink:0">
-                <button class="btn-sm-ghost" style="padding:5px 12px;font-size:12px" onclick="openEditClient(${c.id})">Edit</button>
-                <button class="btn-danger" onclick="deleteClient(${c.id}, this)">Delete</button>
-              </div>
-            </div>`).join('');
-        }
-        document.getElementById('manage-clients-modal').classList.add('open');
-      });
-  }
-
+        // Attach events after rendering
+        list.querySelectorAll('[data-edit-id]').forEach(btn => {
+          btn.addEventListener('click', () => openEditClient(btn.dataset.editId));
+        });
+        list.querySelectorAll('[data-delete-id]').forEach(btn => {
+          btn.addEventListener('click', () => deleteClient(btn.dataset.deleteId, btn));
+        });
+      }
+      document.getElementById('manage-clients-modal').classList.add('open');
+    });
+}
   function openEditClient(id) {
     const c = _clientsMap[id];
     if (!c) return;
