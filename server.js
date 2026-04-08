@@ -66,7 +66,8 @@ app.get('/api/clients', auth, async (req, res) => {
     const result = await pool.query('SELECT id, name, domain, api_key, tracking_method, created_at FROM clients ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('DB ERROR:', err.message, err.stack);
+    res.status(500).json({ error: err.message });
   }
 });
 
