@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Bot Tracker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-box { background: #1a1d27; padding: 40px; border-radius: 12px; width: 340px; border: 1px solid #2d3148; }
+    .login-box h1 { font-size: 20px; margin-bottom: 8px; }
+    .login-box p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+    input { width: 100%; padding: 10px 14px; background: #0f1117; border: 1px solid #2d3148; border-radius: 8px; color: #e2e8f0; font-size: 14px; margin-bottom: 12px; }
+    button { width: 100%; padding: 10px; background: #6366f1; border: none; border-radius: 8px; color: white; font-size: 14px; cursor: pointer; }
+    button:hover { background: #4f46e5; }
+    #app { display: none; }
+    .header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    .header h1 { font-size: 16px; font-weight: 600; flex: 1; }
+    select { background: #0f1117; border: 1px solid #2d3148; color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+    .btn-small { width: auto; padding: 8px 14px; font-size: 13px; }
+    .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 10px; padding: 20px; }
+    .stat-card .label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .stat-card .value { font-size: 32px; font-weight: 700; color: #6366f1; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .panel { background: #1a1d27; border: 1px solid #2d3148; border-radius: 10px; padding: 20px; }
+    .panel h2 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .bot-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2d3148; font-size: 14px; }
+    .bot-row:last-child { border: none; }
+    .bot-badge { background: #1e2035; border: 1px solid #2d3148; padding: 2px 8px; border-radius: 20px; font-size: 12px; color: #6366f1; }
+    .hits-count { font-weight: 600; color: #e2e8f0; }
+    .url-text { font-size: 13px; color: #94a3b8; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; color: #64748b; font-weight: 500; border-bottom: 1px solid #2d3148; }
+    td { padding: 8px 12px; border-bottom: 1px solid #1e2035; }
+    td.mono { font-family: monospace; color: #94a3b8; font-size: 12px; }
+    .empty { color: #64748b; font-size: 14px; padding: 20px 0; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 100; }
+    .modal.open { display: flex; }
+    .modal-box { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 32px; width: 400px; }
+    .modal-box h2 { margin-bottom: 20px; font-size: 16px; }
+    .modal-box input { margin-bottom: 12px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-cancel { background: #2d3148; }
+    .btn-cancel:hover { background: #3d4168; }
+    .api-key { font-family: monospace; font-size: 11px; color: #6366f1; background: #0f1117; padding: 4px 8px; border-radius: 4px; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <h1>AI Bot Tracker</h1>
+    <p>Sign in to your dashboard</p>
+    <input type="password" id="password-input" placeholder="Password" />
+    <button onclick="login()">Sign In</button>
+    <p id="login-error" style="color:#ef4444;font-size:13px;margin-top:10px;display:none">Incorrect password</p>
+  </div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <h1>AI Bot Tracker</h1>
+    <select id="client-select" onchange="loadClient()">
+      <option value="">Select client...</option>
+    </select>
+    <select id="days-select" onchange="loadClient()">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+    <button class="btn-small" onclick="openAddClient()">+ Add Client</button>
+  </div>
+
+  <div class="main">
+    <div id="dashboard" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="label">Total Bot Hits</div><div class="value" id="stat-total">—</div></div>
+        <div class="stat-card"><div class="label">Unique Bots</div><div class="value" id="stat-bots">—</div></div>
+        <div class="stat-card"><div class="label">Pages Crawled</div><div class="value" id="stat-pages">—</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel"><h2>By Bot</h2><div id="bot-breakdown"></div></div>
+        <div class="panel"><h2>Top Pages</h2><div id="top-pages"></div></div>
+      </div>
+      <div class="panel">
+        <h2>Recent Hits</h2>
+        <table>
+          <thead><tr><th>Time</th><th>Bot</th><th>URL</th><th>Country</th><th>Status</th></tr></thead>
+          <tbody id="hits-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="no-client" style="color:#64748b;padding:40px 0;font-size:14px">Select a client above to view their bot data.</div>
+  </div>
+</div>
+
+<div class="modal" id="add-client-modal">
+  <div class="modal-box">
+    <h2>Add Client</h2>
+    <input type="text" id="new-client-name" placeholder="Client name (e.g. Damira Dental)" />
+    <input type="text" id="new-client-domain" placeholder="Domain (e.g. damira.co.uk)" />
+    <select id="new-client-method" style="margin-bottom:12px;width:100%;padding:10px 14px;background:#0f1117;border:1px solid #2d3148;border-radius:8px;color:#e2e8f0;font-size:14px">
+      <option value="cloudflare">Cloudflare Worker</option>
+      <option value="php">PHP / .htaccess</option>
+    </select>
+    <div class="modal-actions">
+      <button onclick="addClient()">Add Client</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="new-api-key" style="margin-top:16px;display:none">
+      <p style="font-size:13px;color:#64748b;margin-bottom:6px">API Key:</p>
+      <div class="api-key" id="api-key-display"></div>
+      <div id="setup-instructions" style="margin-top:16px;font-size:13px;color:#94a3b8;line-height:1.6"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let password = '';
+
+  function login() {
+    password = document.getElementById('password-input').value;
+    fetch('/api/clients', { headers: { 'Authorization': 'Basic ' + btoa('admin:' + password) } })
+      .then(r => {
+        if (r.ok) {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('app').style.display = 'block';
+          loadClients();
+        } else {
+          document.getElementById('login-error').style.display = 'block';
+        }
+      });
+  }
+
+  function authHeaders() {
+    return { 'Authorization': 'Basic ' + btoa('admin:' + password), 'Content-Type': 'application/json' };
+  }
+
+  function loadClients() {
+    fetch('/api/clients', { headers: authHeaders() })
+      .then(r => r.json())
+      .then(clients => {
+        const select = document.getElementById('client-select');
+        select.innerHTML = '<option value="">Select client...</option>';
+        clients.forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${c.name} — ${c.domain}</option>`;
+        });
+      });
+  }
+
+  function loadClient() {
+    const clientId = document.getElementById('client-select').value;
+    const days = document.getElementById('days-select').value;
+    if (!clientId) {
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('no-client').style.display = 'block';
+      return;
+    }
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('no-client').style.display = 'none';
+    Promise.all([
+      fetch(`/api/stats/${clientId}?days=${days}`, { headers: authHeaders() }).then(r => r.json()),
+      fetch(`/api/hits/${clientId}?days=${days}`, { headers: authHeaders() }).then(r => r.json())
+    ]).then(([stats, hits]) => {
+      document.getElementById('stat-total').textContent = stats.total;
+      document.getElementById('stat-bots').textContent = stats.byBot.length;
+      document.getElementById('stat-pages').textContent = stats.topPages.length;
+      document.getElementById('bot-breakdown').innerHTML = stats.byBot.length
+        ? stats.byBot.map(b => `<div class="bot-row"><span class="bot-badge">${b.bot_name}</span><span class="hits-count">${b.hits} hits</span></div>`).join('')
+        : '<div class="empty">No data yet</div>';
+      document.getElementById('top-pages').innerHTML = stats.topPages.length
+        ? stats.topPages.map(p => `<div class="bot-row"><span class="url-text" title="${p.url}">${p.url}</span><span class="hits-count">${p.hits}</span></div>`).join('')
+        : '<div class="empty">No data yet</div>';
+      document.getElementById('hits-table').innerHTML = hits.length
+        ? hits.map(h => `<tr><td>${new Date(h.timestamp).toLocaleString()}</td><td><span class="bot-badge">${h.bot_name}</span></td><td class="mono">${h.url}</td><td>${h.country || '—'}</td><td>${h.status_code || '—'}</td></tr>`).join('')
+        : '<tr><td colspan="5" style="color:#64748b;padding:20px 0">No hits yet</td></tr>';
+    });
+  }
+
+  function openAddClient() {
+    document.getElementById('add-client-modal').classList.add('open');
+    document.getElementById('new-api-key').style.display = 'none';
+  }
+
+  function closeModal() {
+    document.getElementById('add-client-modal').classList.remove('open');
+    document.getElementById('new-client-name').value = '';
+    document.getElementById('new-client-domain').value = '';
+    loadClients();
+  }
+
+  function addClient() {
+    const name = document.getElementById('new-client-name').value;
+    const domain = document.getElementById('new-client-domain').value;
+    const tracking_method = document.getElementById('new-client-method').value;
+    if (!name || !domain) return;
+    fetch('/api/clients', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ name, domain, tracking_method }) })
+      .then(r => r.json()).then(client => {
+        document.getElementById('api-key-display').textContent = client.api_key;
+        document.getElementById('new-api-key').style.display = 'block';
+        const instructions = document.getElementById('setup-instructions');
+        if (tracking_method === 'cloudflare') {
+          instructions.innerHTML = `<strong style="color:#e2e8f0">Cloudflare Worker setup:</strong><ol style="margin-top:8px;padding-left:18px;line-height:2"><li>Go to Cloudflare → Workers → Create Worker</li><li>Paste the worker script</li><li>Set CLIENT_API_KEY to the key above</li><li>Add a route for ${domain}/*</li></ol>`;
+        } else {
+          const htaccessLine = `php_value auto_prepend_file "/home/USERNAME/public_html/bot-tracker.php"`;
+          instructions.innerHTML = `<div style="margin-bottom:16px"><strong style="color:#e2e8f0">Step 1 — Download and upload the PHP file</strong><p style="margin:6px 0 10px;color:#64748b">Pre-configured with your API key. Upload to site root.</p><button onclick="downloadPHP('${client.id}')" style="width:auto;padding:8px 16px;font-size:13px;background:#6366f1">⬇ Download bot-tracker.php</button></div><div><strong style="color:#e2e8f0">Step 2 — Add to top of .htaccess</strong><p style="margin:6px 0 10px;color:#64748b">Update USERNAME to match your server path.</p><div style="background:#0f1117;border:1px solid #2d3148;border-radius:6px;padding:10px;font-family:monospace;font-size:12px;color:#6366f1;word-break:break-all;margin-bottom:8px" id="htaccess-line">${htaccessLine}</div><button onclick="copyHtaccess()" style="width:auto;padding:8px 16px;font-size:13px;background:#2d3148">Copy .htaccess line</button><span id="copy-confirm" style="display:none;margin-left:10px;color:#22c55e;font-size:13px">Copied!</span></div>`;
+        }
+      });
+  }
+
+  function downloadPHP(clientId) {
+    window.location.href = `/api/clients/${clientId}/php-script?auth=${btoa('admin:' + password)}`;
+  }
+
+  function copyHtaccess() {
+    const text = document.getElementById('htaccess-line').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const confirm = document.getElementById('copy-confirm');
+      confirm.style.display = 'inline';
+      setTimeout(() => confirm.style.display = 'none', 2000);
+    });
+  }
+
+  document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>
