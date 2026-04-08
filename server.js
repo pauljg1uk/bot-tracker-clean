@@ -20,7 +20,15 @@ const auth = (req, res, next) => {
   if (authHeader) encoded = authHeader.split(' ')[1];
   else if (req.query.auth) encoded = req.query.auth;
   if (!encoded) return res.status(401).json({ error: 'Unauthorised' });
-  const [, pwd] = Buffer.from(encoded, 'base64').toString().split(':');
+  
+  let pwd = '';
+  try {
+    const decoded = Buffer.from(encoded, 'base64').toString();
+    pwd = decoded.includes(':') ? decoded.split(':')[1] : decoded;
+  } catch(e) {
+    pwd = encoded;
+  }
+  
   if (pwd === process.env.DASHBOARD_PASSWORD) next();
   else res.status(401).json({ error: 'Invalid password' });
 };
