@@ -730,9 +730,17 @@
   // ── AUTH ──
   function login() {
     password = document.getElementById('password-input').value;
+    const remember = document.getElementById('remember-me').checked;
     fetch('/api/clients', { headers: { 'Authorization': 'Basic ' + btoa('admin:' + password) } })
       .then(r => {
         if (r.ok) {
+          if (remember) {
+            localStorage.setItem('bf_saved_pw', password);
+            localStorage.setItem('bf_remember', '1');
+          } else {
+            localStorage.removeItem('bf_saved_pw');
+            localStorage.removeItem('bf_remember');
+          }
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('app').style.display = 'block';
           loadClients();
@@ -741,6 +749,16 @@
         }
       }).catch(() => { document.getElementById('login-error').style.display = 'block'; });
   }
+
+  // Restore saved password on page load
+  (function restoreSavedLogin() {
+    const saved = localStorage.getItem('bf_saved_pw');
+    const remember = localStorage.getItem('bf_remember');
+    if (saved && remember === '1') {
+      document.getElementById('password-input').value = saved;
+      document.getElementById('remember-me').checked = true;
+    }
+  })();
 
   function authHeaders() {
     return { 'Authorization': 'Basic ' + btoa('admin:' + password), 'Content-Type': 'application/json' };
