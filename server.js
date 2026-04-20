@@ -124,26 +124,148 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
     const result = await pool.query('SELECT * FROM clients WHERE id = $1', [req.params.clientId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
     const client = result.rows[0];
-    const appUrl = process.env.APP_URL || 'https://bot-tracker-clean.vercel.app';
+    const appUrl = (process.env.APP_URL || 'https://aicrawler.befoundsearch.com').replace(/\/$/, '');
     const phpScript = `<?php
-// AI Bot Tracker — Paul Gordon SEO
-// Client: ${client.name} (${client.domain})
-define('TRACKER_API', '${appUrl}/api/hit');
-define('CLIENT_API_KEY', '${client.api_key}');
-$AI_BOTS = ['GPTBot'=>'GPTBot','ChatGPT-User'=>'ChatGPT-User','ClaudeBot'=>'ClaudeBot','Anthropic'=>'anthropic-ai','Google-Extended'=>'Google-Extended','PerplexityBot'=>'PerplexityBot','Bytespider'=>'Bytespider','CCBot'=>'CCBot','Meta-ExternalAgent'=>'Meta-ExternalAgent','Cohere'=>'cohere-ai','YouBot'=>'YouBot','Diffbot'=>'Diffbot','Applebot-Extended'=>'Applebot-Extended'];
-$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$matchedBot = null;
-foreach ($AI_BOTS as $name => $pattern) { if (stripos($userAgent, $pattern) !== false) { $matchedBot = $name; break; } }
-if ($matchedBot) {
-  $payload = json_encode(['api_key'=>CLIENT_API_KEY,'url'=>$_SERVER['REQUEST_URI']??'/','bot_name'=>$matchedBot,'user_agent'=>$userAgent,'status_code'=>http_response_code(),'country'=>$_SERVER['HTTP_CF_IPCOUNTRY']??null,'referrer'=>$_SERVER['HTTP_REFERER']??null]);
-  $ctx = stream_context_create(['http'=>['method'=>'POST','header'=>"Content-Type: application/json\\r\\nContent-Length: ".strlen($payload),'content'=>$payload,'timeout'=>2]]);
-  @file_get_contents(TRACKER_API, false, $ctx);
-}`;
+/**
+ * BeFound AI Tracker
+ * Client : ${client.name} (${client.domain})
+ *
+ * INSTALLATION (choose ONE method):
+ *
+ * METHOD A — WordPress sites (RECOMMENDED):
+ *   1. Upload this file to your WordPress root (same folder as wp-config.php)
+ *   2. Add these lines near the top of your functions.php (Appearance > Theme File Editor):
+ *
+ *   add_action('init', function() {
+ *     require_once ABSPATH . 'bot-tracker.php';
+ *   });
+ *
+ * METHOD B — Non-WordPress PHP sites:
+ *   Add this line to the top of every PHP page you want to track (e.g. index.php, header.php):
+ *   <?php require_once __DIR__ . '/bot-tracker.php'; ?>
+ *
+ * DO NOT use .htaccess or php.ini — these almost always cause a 500 error on shared hosting.
+ *
+ * Do NOT edit the API key below.
+ */
+
+define('BF_TRACKER_API', '${appUrl}/api/hit');
+define('BF_CLIENT_KEY',  '${client.api_key}');
+
+if (!defined('BF_BOT_TRACKER_LOADED')) {
+  define('BF_BOT_TRACKER_LOADED', true);
+
+  $AI_BOTS = [
+    'GPTBot'=>'GPTBot','ChatGPT-User'=>'ChatGPT-User','OAI-SearchBot'=>'OAI-SearchBot',
+    'ClaudeBot'=>'ClaudeBot','Claude-Web'=>'Claude-Web','Anthropic'=>'anthropic-ai',
+    'Google-Extended'=>'Google-Extended','Gemini'=>'Gemini','PerplexityBot'=>'PerplexityBot',
+    'Bytespider'=>'Bytespider','CCBot'=>'CCBot','Meta-ExternalAgent'=>'Meta-ExternalAgent',
+    'FacebookBot'=>'FacebookBot','Cohere'=>'cohere-ai','YouBot'=>'YouBot',
+    'Diffbot'=>'Diffbot','Applebot-Extended'=>'Applebot-Extended',
+    'Amazonbot'=>'Amazonbot','DuckAssistBot'=>'DuckAssistBot',
+  ];
+
+  $ua  = $_SERVER['HTTP_USER_AGENT'] ?? '';
+  $bot = null;
+  foreach ($AI_BOTS as $name => $pattern) {
+    if (stripos($ua, $pattern) !== false) { $bot = $name; break; }
+  }
+
+  if ($bot) {
+    $payload = json_encode([
+      'api_key'     => BF_CLIENT_KEY,
+      'url'         => $_SERVER['REQUEST_URI'] ?? '/',
+      'bot_name'    => $bot,
+      'user_agent'  => $ua,
+      'status_code' => http_response_code() ?: 200,
+      'country'     => $_SERVER['HTTP_CF_IPCOUNTRY'] ?? null,
+      'referrer'    => $_SERVER['HTTP_REFERER']      ?? null,
+    ]);
+
+    if (function_exists('curl_init')) {
+      $ch = curl_init(BF_TRACKER_API);
+      curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 3,
+        CURLOPT_CONNECTTIMEOUT => 2,
+        CURLOPT_SSL_VERIFYPEER => false,
+      ]);
+      @curl_exec($ch);
+      curl_close($ch);
+    } elseif (ini_get('allow_url_fopen')) {
+      $ctx = stream_context_create(['http' => [
+        'method'  => 'POST',
+        'header'  => "Content-Type: application/json\r\nContent-Length: " . strlen($payload),
+        'content' => $payload,
+        'timeout' => 2,
+      ]]);
+      @file_get_contents(BF_TRACKER_API, false, $ctx);
+    }
+  }
+}
+`;
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', 'attachment; filename="bot-tracker.php"');
     res.send(phpScript);
   } catch (err) {
     console.error('PHP script error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── WORKER SCRIPT DOWNLOAD ──
+app.get('/api/clients/:clientId/worker-script', auth, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM clients WHERE id = $1', [req.params.clientId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
+    const client = result.rows[0];
+    const appUrl = (process.env.APP_URL || 'https://aicrawler.befoundsearch.com').replace(/\/$/, '');
+    const workerScript = `// BeFound AI Tracker
+// Client: ${client.name} (${client.domain})
+// Do NOT edit the API_URL or CLIENT_API_KEY values below.
+
+const API_URL = '${appUrl}/api/hit';
+const CLIENT_API_KEY = '${client.api_key}';
+
+const AI_BOTS = [
+  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-Web',
+  'anthropic-ai', 'Google-Extended', 'Gemini', 'PerplexityBot', 'Bytespider',
+  'CCBot', 'Meta-ExternalAgent', 'FacebookBot', 'cohere-ai', 'YouBot',
+  'Diffbot', 'Applebot-Extended', 'Amazonbot', 'DuckAssistBot'
+];
+
+export default {
+  async fetch(request, env, ctx) {
+    const ua = request.headers.get('User-Agent') || '';
+    const bot = AI_BOTS.find(b => ua.toLowerCase().includes(b.toLowerCase()));
+    if (bot) {
+      const url = new URL(request.url);
+      ctx.waitUntil(fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: CLIENT_API_KEY,
+          url: url.pathname + url.search,
+          bot_name: bot,
+          user_agent: ua,
+          status_code: 200,
+          country: request.cf?.country || null,
+          referrer: request.headers.get('Referer') || null,
+        }),
+      }));
+    }
+    return fetch(request);
+  }
+};
+`;
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Content-Disposition', 'attachment; filename="bf-worker.js"');
+    res.send(workerScript);
+  } catch (err) {
+    console.error('Worker script error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

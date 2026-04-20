@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BeFound Search — AI Bot Tracker</title>
+  <title>BeFound AI Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -341,7 +341,7 @@
         </svg>
       </span>
     </div>
-    <div class="login-tagline">AI Bot Tracker</div>
+    <div class="login-tagline">BeFound AI Tracker</div>
     <div class="login-card">
       <h2>Welcome back</h2>
       <p class="sub">Sign in to your dashboard</p>
@@ -658,7 +658,7 @@
       <div class="field-label">Tracking Method</div>
       <select id="new-client-method" style="width:100%;margin-bottom:16px">
         <option value="cloudflare">Cloudflare Worker</option>
-        <option value="php">PHP / .htaccess</option>
+        <option value="php">WordPress / PHP</option>
       </select>
       <div class="modal-actions">
         <button class="btn-primary" id="create-client-btn" onclick="addClient()">Create Client</button>
@@ -1623,7 +1623,8 @@ function openManageClients() {
               <div class="client-item-domain">${escHtml(c.domain)}</div>
               <div class="client-item-key">${escHtml(c.api_key)}</div>
             </div>
-            <div style="display:flex;gap:6px;flex-shrink:0">
+            <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+              <button class="btn-sm-ghost" style="padding:5px 10px;font-size:11px;background:var(--green);color:#fff;border-color:var(--green)" onclick="${c.tracking_method === 'cloudflare' ? `downloadWorker('${c.id}')` : `downloadPHP('${c.id}')`}">↓ Script</button>
               <button class="btn-sm-ghost" style="padding:5px 12px;font-size:12px" data-edit-id="${c.id}">Edit</button>
               <button class="btn-danger" data-delete-id="${c.id}">Delete</button>
             </div>
@@ -1711,22 +1712,32 @@ function openManageClients() {
       if (tracking_method === 'cloudflare') {
         instructions.innerHTML = `
           <strong style="display:block;margin-bottom:12px;color:var(--text)">Cloudflare Worker setup</strong>
-          ${step(1, `Go to <strong>Cloudflare → Workers → Create Worker</strong>`)}
-          ${step(2, `Paste the worker script and set ${code('CLIENT_API_KEY')} to the key above`)}
-          ${step(3, `Add a route for ${code(domain + '/*')}`)}
+          ${step(1, `Go to <strong>Cloudflare → Workers &amp; Pages → Create → Create Worker</strong>. Give it any name (e.g. <em>bf-bot-tracker</em>) and click Deploy.`)}
+          ${step(2, `Click <strong>Edit Code</strong>, delete everything in the editor, then download and paste the pre-configured worker script:`)}
+          <div style="display:flex;align-items:center;gap:10px;margin:0 0 16px 24px">
+            <button onclick="downloadWorker('${client.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">↓ Download bf-worker.js</button>
+          </div>
+          ${step(3, `Click <strong>Deploy</strong>, then go to the worker → <strong>Settings → Triggers → Add Route</strong> and enter: ${code(domain + '/*')} — select your zone from the dropdown.`)}
+          <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted)">
+            <strong style="color:var(--text)">BigCommerce / Cloudflare tip:</strong> Your domain's DNS record in Cloudflare must be set to <strong>Proxied</strong> (orange cloud icon) — not DNS-only (grey cloud) — otherwise the worker route won't fire.
+          </div>
         `;
       } else {
-        const htaccessLine = `php_value auto_prepend_file "/home/USERNAME/public_html/bot-tracker.php"`;
+        const functionsPhpCode = `add_action('init', function() {\n  require_once ABSPATH . 'bot-tracker.php';\n});`;
         instructions.innerHTML = `
-          <strong style="display:block;margin-bottom:12px;color:var(--text)">PHP / .htaccess setup</strong>
-          ${step(1, `<div style="margin-bottom:8px">Download the pre-configured PHP file and upload it to the site root — same folder as ${code('wp-config.php')} or ${code('index.php')}.</div>
+          <strong style="display:block;margin-bottom:12px;color:var(--text)">WordPress setup (recommended)</strong>
+          ${step(1, `<div style="margin-bottom:8px">Download the pre-configured PHP file and upload it to the <strong>WordPress root</strong> — same folder as ${code('wp-config.php')}.</div>
             <button onclick="downloadPHP('${client.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">↓ Download bot-tracker.php</button>`)}
-          ${step(2, `<div style="margin-bottom:8px">Add this line to the <strong>top</strong> of ${code('.htaccess')} — update USERNAME to match the actual server path.</div>
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:var(--green-text);word-break:break-all;margin-bottom:8px" id="htaccess-line">${escHtml(htaccessLine)}</div>
+          ${step(2, `<div style="margin-bottom:8px">Go to <strong>Appearance → Theme File Editor → functions.php</strong> and add these lines near the top, after the opening ${code('<?php')}:</div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:var(--green-text);white-space:pre;margin-bottom:8px" id="htaccess-line">${escHtml(functionsPhpCode)}</div>
             <div style="display:flex;align-items:center;gap:10px">
-              <button onclick="copyHtaccess()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer">Copy .htaccess line</button>
+              <button onclick="copyHtaccess()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer">Copy code</button>
               <span id="copy-confirm" style="display:none;color:var(--green);font-size:12px;font-weight:500">Copied!</span>
             </div>`)}
+          <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted)">
+            <strong style="color:var(--text)">Not WordPress?</strong> Add ${code('<?php require_once __DIR__ . \'/bot-tracker.php\'; ?>')} to the top of your main PHP file (e.g. index.php or header.php).<br>
+            <strong style="color:#c0392b">Do NOT use .htaccess or php.ini</strong> — these cause 500 errors on most shared hosts.
+          </div>
         `;
       }
       loadClients();
@@ -1737,10 +1748,23 @@ function openManageClients() {
     window.location.href = `/api/clients/${clientId}/php-script?auth=${btoa('admin:' + password)}`;
   }
 
+  function downloadWorker(clientId) {
+    window.location.href = `/api/clients/${clientId}/worker-script?auth=${btoa('admin:' + password)}`;
+  }
+
   function copyHtaccess() {
     const text = document.getElementById('htaccess-line').textContent;
     navigator.clipboard.writeText(text).then(() => {
       const el = document.getElementById('copy-confirm');
+      el.style.display = 'inline';
+      setTimeout(() => { el.style.display = 'none'; }, 2000);
+    });
+  }
+
+  function copyCFWorker() {
+    const text = document.getElementById('cf-worker-script').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const el = document.getElementById('cf-copy-confirm');
       el.style.display = 'inline';
       setTimeout(() => { el.style.display = 'none'; }, 2000);
     });
