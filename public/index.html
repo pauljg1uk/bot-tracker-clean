@@ -292,6 +292,32 @@
     #no-client-empty { color: var(--muted); padding: 80px 0; font-size: 14px; text-align: center; }
     #no-client-empty strong { display: block; font-size: 20px; font-weight: 600; color: var(--muted2); margin-bottom: 8px; }
 
+    /* ── LIVE ACTIVITY STRIP ── */
+    @keyframes live-pulse {
+      0%,100% { transform:scale(1);   opacity:1; }
+      50%      { transform:scale(1.5); opacity:.5; }
+    }
+    @keyframes live-glow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(74,125,99,.5); }
+      50%      { box-shadow: 0 0 0 6px rgba(74,125,99,0); }
+    }
+    #live-strip { background:var(--surface); border:1.5px solid var(--border); border-radius:16px; padding:14px 20px; margin-bottom:14px; display:none; }
+    #live-strip.live-active { border-color:#4a7d6340; background:#4a7d6305; }
+    .live-top { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .live-dot { width:10px; height:10px; border-radius:50%; background:var(--muted2); flex-shrink:0; }
+    .live-dot.pulsing { background:#4a7d63; animation: live-pulse 1.4s ease-in-out infinite, live-glow 1.4s ease-in-out infinite; }
+    .live-badge { font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; padding:2px 8px; border-radius:20px; background:#4a7d6318; color:#2d6b4a; }
+    .live-badge.quiet { background:var(--surface2); color:var(--muted2); }
+    .live-count { font-size:14px; font-weight:800; color:var(--text); letter-spacing:-0.02em; }
+    .live-count-sub { font-size:12px; color:var(--muted); }
+    .live-check { font-size:11px; color:var(--muted); margin-left:auto; }
+    .live-hits-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+    .live-hit-chip { display:inline-flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:5px 10px; font-size:12px; max-width:320px; }
+    .live-hit-chip .lhc-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .live-hit-chip .lhc-bot { font-weight:700; color:var(--text); white-space:nowrap; }
+    .live-hit-chip .lhc-url { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:monospace; font-size:11px; }
+    .live-hit-chip .lhc-age { color:var(--muted2); font-size:10px; white-space:nowrap; margin-left:2px; }
+
     /* ── EXPORT BUTTON ── */
     .export-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
     .export-btn:hover { background: var(--green-bg); color: var(--green-text); border-color: var(--green); }
@@ -500,6 +526,18 @@
           </div>
           <div class="sc-action" style="color:#e57c23">View intel →</div>
         </div>
+      </div>
+
+      <!-- LIVE ACTIVITY STRIP -->
+      <div id="live-strip">
+        <div class="live-top">
+          <span class="live-dot" id="live-dot"></span>
+          <span class="live-badge quiet" id="live-badge">Quiet</span>
+          <span class="live-count" id="live-count"></span>
+          <span class="live-count-sub" id="live-count-sub">· last 5 min</span>
+          <span class="live-check" id="live-check"></span>
+        </div>
+        <div class="live-hits-row" id="live-hits-row"></div>
       </div>
 
       <!-- KPI CARDS -->
@@ -1236,6 +1274,7 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
     if (!clientId) {
       document.getElementById('dashboard').style.display = 'none';
       document.getElementById('no-client').style.display = 'block';
+      stopLivePolling();
       return;
     }
     document.getElementById('dashboard').style.display = 'block';
@@ -1257,6 +1296,87 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
       renderPatterns(stats.byBot, stats.topPages);
       renderHitsTable(hits);
     }).catch(console.error);
+
+    startLivePolling(clientId);
+  }
+
+  // ── LIVE ACTIVITY POLLING ──
+  let _liveTimer = null;
+
+  function startLivePolling(clientId) {
+    stopLivePolling();
+    document.getElementById('live-strip').style.display = 'block';
+    pollLive(clientId);
+    _liveTimer = setInterval(() => pollLive(clientId), 30000);
+  }
+
+  function stopLivePolling() {
+    if (_liveTimer) { clearInterval(_liveTimer); _liveTimer = null; }
+    document.getElementById('live-strip').style.display = 'none';
+  }
+
+  async function pollLive(clientId) {
+    try {
+      const data = await fetch('/api/live/' + clientId, { headers: authHeaders() }).then(r => r.json());
+      renderLiveStrip(data);
+    } catch(e) { /* silent — live strip is non-critical */ }
+  }
+
+  function renderLiveStrip(data) {
+    const strip   = document.getElementById('live-strip');
+    const dot     = document.getElementById('live-dot');
+    const badge   = document.getElementById('live-badge');
+    const count   = document.getElementById('live-count');
+    const sub     = document.getElementById('live-count-sub');
+    const check   = document.getElementById('live-check');
+    const hitsRow = document.getElementById('live-hits-row');
+    const hits    = data.hits || [];
+    const active  = hits.length > 0;
+
+    strip.classList.toggle('live-active', active);
+    dot.classList.toggle('pulsing', active);
+
+    if (active) {
+      badge.textContent = 'Live';
+      badge.className = 'live-badge';
+      count.textContent = hits.length + ' hit' + (hits.length !== 1 ? 's' : '');
+      sub.textContent = '· last 5 min';
+      // Deduplicate by bot+url, keep most recent
+      const seen = new Set();
+      const unique = hits.filter(h => {
+        const k = h.bot_name + '|' + h.url;
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      }).slice(0, 6);
+      hitsRow.innerHTML = unique.map(h => {
+        const c = botColor(h.bot_name);
+        const age = liveAge(h.timestamp);
+        const shortUrl = (h.url || '/').replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '') || '/';
+        const display = shortUrl.length > 40 ? shortUrl.slice(0, 38) + '…' : shortUrl;
+        return `<span class="live-hit-chip">
+          <span class="lhc-dot" style="background:${c}"></span>
+          <span class="lhc-bot">${escHtml(h.bot_name)}</span>
+          <span class="lhc-url">${escHtml(display)}</span>
+          <span class="lhc-age">${age}</span>
+        </span>`;
+      }).join('');
+    } else {
+      badge.textContent = 'Quiet';
+      badge.className = 'live-badge quiet';
+      count.textContent = '';
+      sub.textContent = 'No activity in last 5 min';
+      hitsRow.innerHTML = '';
+    }
+
+    const now = new Date();
+    check.textContent = 'Checked ' + now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  function liveAge(ts) {
+    const secs = Math.max(0, Math.round((Date.now() - new Date(ts).getTime()) / 1000));
+    if (secs < 60)  return secs + 's ago';
+    if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+    return Math.floor(secs / 3600) + 'h ago';
   }
 
   // ── KPIs ──

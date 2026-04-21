@@ -429,6 +429,22 @@ export default {
   }
 });
 
+// ── LIVE ACTIVITY (last 5 minutes) ──
+app.get('/api/live/:clientId', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT bot_name, url, timestamp, country
+       FROM bot_hits
+       WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '5 minutes'
+       ORDER BY timestamp DESC LIMIT 20`,
+      [req.params.clientId]
+    );
+    res.json({ hits: result.rows, count: result.rows.length, serverTime: new Date().toISOString() });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── STATS ──
 app.get('/api/stats/:clientId', auth, async (req, res) => {
   const { clientId } = req.params;
