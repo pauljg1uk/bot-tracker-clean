@@ -303,6 +303,61 @@ app.get('/api/stats/:clientId', auth, async (req, res) => {
   }
 });
 
+// ── PAGE INTELLIGENCE ──
+app.get('/api/clients/:clientId/page-intel', auth, async (req, res) => {
+  const { clientId } = req.params;
+  const days = parseInt(req.query.days) || 30;
+  const REALTIME = ['ChatGPT-User', 'OAI-SearchBot', 'PerplexityBot', 'Claude-Web'];
+  try {
+    const [mostCrawled, realtimePages, coldPages, statusRaw, referrers] = await Promise.all([
+      pool.query(
+        `SELECT url, COUNT(*) as hits, COUNT(DISTINCT bot_name) as unique_bots,
+           MAX(timestamp) as last_seen, json_agg(DISTINCT bot_name) as bot_names
+         FROM bot_hits WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days'
+         GROUP BY url ORDER BY hits DESC LIMIT 25`,
+        [clientId]
+      ),
+      pool.query(
+        `SELECT url, bot_name, COUNT(*) as hits, MAX(timestamp) as last_seen
+         FROM bot_hits WHERE client_id=$1 AND bot_name = ANY($2)
+           AND timestamp > NOW() - INTERVAL '${days} days'
+         GROUP BY url, bot_name ORDER BY hits DESC LIMIT 25`,
+        [clientId, REALTIME]
+      ),
+      pool.query(
+        `SELECT url, COUNT(*) as total_hits, MAX(timestamp) as last_seen
+         FROM bot_hits WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days'
+         GROUP BY url HAVING MAX(timestamp) < NOW() - INTERVAL '14 days'
+         ORDER BY last_seen DESC LIMIT 20`,
+        [clientId]
+      ),
+      pool.query(
+        `SELECT status_code, COUNT(*) as hits
+         FROM bot_hits WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days'
+         GROUP BY status_code ORDER BY hits DESC`,
+        [clientId]
+      ),
+      pool.query(
+        `SELECT referrer, COUNT(*) as hits
+         FROM bot_hits WHERE client_id=$1 AND referrer IS NOT NULL AND referrer != ''
+           AND timestamp > NOW() - INTERVAL '${days} days'
+         GROUP BY referrer ORDER BY hits DESC LIMIT 10`,
+        [clientId]
+      ),
+    ]);
+    res.json({
+      mostCrawled:    mostCrawled.rows.map(r => ({ ...r, hits: parseInt(r.hits), unique_bots: parseInt(r.unique_bots) })),
+      realtimePages:  realtimePages.rows.map(r => ({ ...r, hits: parseInt(r.hits) })),
+      coldPages:      coldPages.rows.map(r => ({ ...r, total_hits: parseInt(r.total_hits) })),
+      statusBreakdown: statusRaw.rows.map(r => ({ ...r, hits: parseInt(r.hits) })),
+      referrers:      referrers.rows.map(r => ({ ...r, hits: parseInt(r.hits) })),
+    });
+  } catch (err) {
+    console.error('Page intel error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── HITS ──
 app.get('/api/hits/:clientId', auth, async (req, res) => {
   const days = parseInt(req.query.days) || 30;

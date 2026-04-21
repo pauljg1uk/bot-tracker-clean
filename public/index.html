@@ -133,6 +133,25 @@
     .type-badge { display:inline-block; font-size:10px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; padding:2px 7px; border-radius:20px; white-space:nowrap; }
     .type-realtime { background:#0ea5e920; color:#0ea5e9; border:1px solid #0ea5e940; }
     .type-indexing  { background:#94a3b820; color:#64748b; border:1px solid #94a3b840; }
+    /* Page Intelligence */
+    #intel-view { display:none; }
+    .sc-intel:hover { border-color:#e57c23; }
+    .sc-icon-intel { background:#fff5ec; }
+    .sc-icon-intel svg { fill:#e57c23; }
+    .intel-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+    .intel-row:last-child { border-bottom:none; padding-bottom:0; }
+    .intel-url { font-family:monospace; font-size:12px; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+    .intel-bar-wrap { width:110px; flex-shrink:0; }
+    .intel-bar-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+    .intel-bar-fill  { height:100%; border-radius:3px; transition:width .4s; }
+    .intel-hits { font-size:13px; font-weight:700; width:38px; text-align:right; flex-shrink:0; }
+    .intel-bots { display:flex; gap:4px; flex-wrap:wrap; }
+    .intel-diversity { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; flex-shrink:0; }
+    .status-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .status-bar-label { width:130px; font-size:12px; font-weight:600; flex-shrink:0; }
+    .status-bar-track { flex:1; height:10px; background:var(--surface2); border-radius:5px; overflow:hidden; }
+    .status-bar-fill  { height:100%; border-radius:5px; }
+    .status-bar-count { font-size:12px; font-weight:700; width:45px; text-align:right; flex-shrink:0; }
     .bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .bot-hits-cell { font-size: 13px; font-weight: 600; text-align: right; }
@@ -436,6 +455,16 @@
           </div>
           <div class="sc-arrow">→</div>
         </div>
+        <div class="shortcut-card sc-intel" onclick="openIntelView()">
+          <div class="sc-icon sc-icon-intel">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>
+          </div>
+          <div class="sc-body">
+            <div class="sc-title">Page Intelligence</div>
+            <div class="sc-sub">Citation candidates, real-time AI fetches, cold pages &amp; crawl health</div>
+          </div>
+          <div class="sc-arrow">→</div>
+        </div>
       </div>
 
       <!-- KPI CARDS -->
@@ -616,6 +645,59 @@
       </div>
 
     </div><!-- /pages-view -->
+
+    <!-- PAGE INTELLIGENCE VIEW -->
+    <div id="intel-view">
+      <div class="pv-header">
+        <button class="pv-back" onclick="closeIntelView()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          Dashboard
+        </button>
+        <div>
+          <div class="pv-title">Page Intelligence</div>
+          <div class="pv-sub" id="intel-sub">How AI bots interact with your content</div>
+        </div>
+      </div>
+
+      <!-- A: Most Crawled -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Most Crawled Pages</span>
+          <span style="font-size:12px;color:var(--muted)">Prime AI citation candidates — bots keep returning here</span>
+        </div>
+        <div id="intel-most-crawled"><div class="empty">Loading…</div></div>
+      </div>
+
+      <!-- B: Real-time AI fetches -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">AI-Cited Pages</span>
+          <span style="font-size:12px;color:var(--muted)">Fetched in real time — a human's query triggered this visit</span>
+        </div>
+        <div id="intel-realtime"><div class="empty">Loading…</div></div>
+      </div>
+
+      <div class="two-col">
+        <!-- C: Cold pages -->
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-header">
+            <span class="panel-title">Cold Pages</span>
+            <span style="font-size:12px;color:var(--muted)">No AI crawl in 14+ days — possible discoverability gap</span>
+          </div>
+          <div id="intel-cold"><div class="empty">Loading…</div></div>
+        </div>
+
+        <!-- D: Crawl health -->
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-header">
+            <span class="panel-title">Crawl Health</span>
+            <span style="font-size:12px;color:var(--muted)">Response codes AI bots received</span>
+          </div>
+          <div id="intel-status"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+
+    </div><!-- /intel-view -->
 
     <!-- PAGE DETAIL PANEL -->
     <div id="page-detail-panel" class="pdp-overlay" onclick="if(event.target===this)closePdp()">
@@ -1818,6 +1900,139 @@ function openManageClients() {
       btn.disabled = false;
       btn.textContent = 'Retry';
     });
+  }
+
+  // ── PAGE INTELLIGENCE ──
+  function openIntelView() {
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('pages-view').style.display = 'none';
+    document.getElementById('intel-view').style.display = 'block';
+    loadIntelData();
+  }
+  function closeIntelView() {
+    document.getElementById('intel-view').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+  }
+  function loadIntelData() {
+    const clientId = document.getElementById('client-select').value;
+    ['intel-most-crawled','intel-realtime','intel-cold','intel-status'].forEach(id => {
+      document.getElementById(id).innerHTML = '<div class="empty">Loading…</div>';
+    });
+    fetch('/api/clients/' + clientId + '/page-intel?days=' + activeDays, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(data => {
+        renderIntelMostCrawled(data.mostCrawled || []);
+        renderIntelRealtime(data.realtimePages || []);
+        renderIntelCold(data.coldPages || []);
+        renderIntelStatus(data.statusBreakdown || []);
+      })
+      .catch(() => {
+        ['intel-most-crawled','intel-realtime','intel-cold','intel-status'].forEach(id => {
+          document.getElementById(id).innerHTML = '<div class="empty">Error loading data</div>';
+        });
+      });
+  }
+
+  function renderIntelMostCrawled(pages) {
+    const el = document.getElementById('intel-most-crawled');
+    if (!pages.length) { el.innerHTML = '<div class="empty">No page data yet</div>'; return; }
+    const maxHits = pages[0].hits || 1;
+    el.innerHTML = pages.map((p, i) => {
+      const pct = Math.max(3, Math.round((p.hits / maxHits) * 100));
+      const d = p.unique_bots || 1;
+      const dc = d >= 3 ? '#e57c23' : d >= 2 ? '#6b4fbb' : 'var(--muted2)';
+      const bots = (p.bot_names || []).map(b => {
+        const c = botColor(b);
+        return `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${c}18;color:${c};border:1px solid ${c}30">${escHtml(b.replace('Bot','').replace('-Extended','').replace('-User',''))}</span>`;
+      }).join(' ');
+      return `<div class="intel-row">
+        <span style="font-size:11px;font-weight:700;color:var(--muted2);width:18px;flex-shrink:0">${i+1}</span>
+        <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
+        <div class="intel-bar-wrap">
+          <div class="intel-bar-track"><div class="intel-bar-fill" style="width:${pct}%;background:var(--green)"></div></div>
+        </div>
+        <div class="intel-hits">${Number(p.hits).toLocaleString()}</div>
+        <span class="intel-diversity" style="background:${dc}18;color:${dc};border:1px solid ${dc}30">${d} bot${d > 1 ? 's' : ''}</span>
+        <div class="intel-bots">${bots}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderIntelRealtime(rows) {
+    const el = document.getElementById('intel-realtime');
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty">No real-time AI retrievals recorded yet.<br><span style="font-size:12px;color:var(--muted)">These appear when ChatGPT-User, PerplexityBot or OAI-SearchBot visit — meaning a live user triggered the fetch.</span></div>';
+      return;
+    }
+    const byUrl = {};
+    rows.forEach(r => {
+      if (!byUrl[r.url]) byUrl[r.url] = { url: r.url, bots: [], total: 0, last_seen: r.last_seen };
+      byUrl[r.url].bots.push({ bot: r.bot_name, hits: parseInt(r.hits) });
+      byUrl[r.url].total += parseInt(r.hits);
+      if (r.last_seen > byUrl[r.url].last_seen) byUrl[r.url].last_seen = r.last_seen;
+    });
+    const sorted = Object.values(byUrl).sort((a, b) => b.total - a.total);
+    el.innerHTML = `<div style="background:#0ea5e910;border:1px solid #0ea5e930;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#0369a1">
+      A real user was using an AI tool when it fetched these pages — not a background crawl. This is your most direct signal of AI-driven referral traffic.
+    </div>` + sorted.map(p => {
+      const pills = p.bots.map(b => {
+        const c = botColor(b.bot);
+        return `<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${c}18;color:${c};border:1px solid ${c}30">${escHtml(b.bot)} ×${b.hits}</span>`;
+      }).join(' ');
+      return `<div class="intel-row">
+        <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${pills}</div>
+        <div style="font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap">${relativeTime(p.last_seen)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderIntelCold(pages) {
+    const el = document.getElementById('intel-cold');
+    if (!pages.length) {
+      el.innerHTML = '<div class="empty" style="color:var(--green)">All crawled pages are still being visited regularly.</div>';
+      return;
+    }
+    el.innerHTML = pages.map(p => {
+      const d = new Date(p.last_seen);
+      const date = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' });
+      return `<div class="intel-row">
+        <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">${p.total_hits} hit${p.total_hits > 1?'s':''}</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;flex-shrink:0;white-space:nowrap">Last: ${date}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderIntelStatus(rows) {
+    const el = document.getElementById('intel-status');
+    if (!rows.length) { el.innerHTML = '<div class="empty">No status data</div>'; return; }
+    const groups = { '2xx OK': 0, '3xx Redirect': 0, '4xx Error': 0, '5xx Server Error': 0 };
+    rows.forEach(r => {
+      const c = r.status_code;
+      if (c >= 500)      groups['5xx Server Error'] += r.hits;
+      else if (c >= 400) groups['4xx Error']         += r.hits;
+      else if (c >= 300) groups['3xx Redirect']      += r.hits;
+      else if (c >= 200) groups['2xx OK']             += r.hits;
+    });
+    const total = Object.values(groups).reduce((a, b) => a + b, 0) || 1;
+    const colors = { '2xx OK':'#4a7d63', '3xx Redirect':'#f59e0b', '4xx Error':'#f97316', '5xx Server Error':'#ef4444' };
+    const bars = Object.entries(groups)
+      .filter(([, h]) => h > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([label, hits]) => {
+        const pct = Math.max(2, Math.round((hits / total) * 100));
+        const c = colors[label];
+        return `<div class="status-bar-row">
+          <div class="status-bar-label" style="color:${c}">${label}</div>
+          <div class="status-bar-track"><div class="status-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+          <div class="status-bar-count">${hits.toLocaleString()}</div>
+        </div>`;
+      }).join('');
+    const errNote = groups['4xx Error'] > 0
+      ? `<span style="color:#f97316;font-weight:600">${groups['4xx Error'].toLocaleString()} 4xx errors</span> — AI bots wasted crawl budget on broken or missing pages.`
+      : '<span style="color:var(--green);font-weight:600">No 4xx errors</span> — all crawled pages served correctly.';
+    el.innerHTML = bars + `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">${errNote}</div>`;
   }
 
   function copyApiKey() {
