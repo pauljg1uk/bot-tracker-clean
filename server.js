@@ -250,27 +250,48 @@ function extractPageDates(html, lastModHeader) {
   return { published: null, modified: null, source: null };
 }
 
-function fetchPageDates(url, domain) {
+function fetchPageDates(url, domain, redirectCount) {
+  redirectCount = redirectCount || 0;
   return new Promise((resolve) => {
     let fullUrl = url;
     if (url.startsWith('/')) fullUrl = 'https://' + domain.replace(/^https?:\/\//, '').replace(/\/$/, '') + url;
     const done = (result) => resolve({ url, ...result });
     let resolved = false;
     const finish = (result) => { if (!resolved) { resolved = true; done(result); } };
-    const timer = setTimeout(() => finish({ published: null, modified: null, source: 'timeout' }), 6000);
+    const timer = setTimeout(() => finish({ published: null, modified: null, source: 'timeout' }), 8000);
     try {
       const mod = fullUrl.startsWith('https') ? https : http;
       const req = mod.get(fullUrl, {
-        headers: { 'User-Agent': 'BeFound-AITracker-DateCheck/1.0', 'Accept': 'text/html' },
-        timeout: 5000
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; BeFound-AITracker/1.0)',
+          'Accept': 'text/html',
+          'Accept-Encoding': 'identity'   // prevents gzip so we can read raw HTML
+        },
+        timeout: 6000
       }, (res) => {
+        // follow redirects (301 / 302 / 303 / 307 / 308)
+        if ([301,302,303,307,308].includes(res.statusCode) && res.headers.location && redirectCount < 3) {
+          try { req.destroy(); } catch(e) {}
+          clearTimeout(timer);
+          const loc = res.headers.location;
+          const nextUrl = loc.startsWith('http') ? loc : fullUrl.replace(/^(https?:\/\/[^/]+).*/, '$1') + loc;
+          return resolve(fetchPageDates(nextUrl, domain, redirectCount + 1).then(r => ({ ...r, url })));
+        }
         const lastMod = res.headers['last-modified'] || null;
-        let html = '';
+        let chunks = [];
+        let totalLen = 0;
         res.on('data', chunk => {
-          html += chunk.toString();
-          if (html.includes('</head>') || html.length > 80000) { try { req.destroy(); } catch(e) {} }
+          chunks.push(chunk);
+          totalLen += chunk.length;
+          // peek as text to detect </head> so we can bail early
+          const preview = Buffer.concat(chunks).toString('latin1');
+          if (preview.includes('</head>') || totalLen > 120000) { try { req.destroy(); } catch(e) {} }
         });
-        res.on('close', () => { clearTimeout(timer); finish(extractPageDates(html, lastMod)); });
+        res.on('close', () => {
+          clearTimeout(timer);
+          const html = Buffer.concat(chunks).toString('utf8');
+          finish(extractPageDates(html, lastMod));
+        });
         res.on('error', () => { clearTimeout(timer); finish({ published: null, modified: null, source: 'error' }); });
       });
       req.on('error', () => { clearTimeout(timer); finish({ published: null, modified: null, source: 'error' }); });
