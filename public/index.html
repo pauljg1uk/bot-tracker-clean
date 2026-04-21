@@ -130,6 +130,9 @@
     .bot-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .bot-name-cell { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; overflow: hidden; }
     .bot-name-cell span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .type-badge { display:inline-block; font-size:10px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; padding:2px 7px; border-radius:20px; white-space:nowrap; }
+    .type-realtime { background:#0ea5e920; color:#0ea5e9; border:1px solid #0ea5e940; }
+    .type-indexing  { background:#94a3b820; color:#64748b; border:1px solid #94a3b840; }
     .bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .bot-hits-cell { font-size: 13px; font-weight: 600; text-align: right; }
@@ -525,6 +528,7 @@
               <tr>
                 <th>Time</th>
                 <th>Bot</th>
+                <th>Type</th>
                 <th>URL</th>
                 <th>Country</th>
                 <th>Status</th>
@@ -744,6 +748,19 @@
     for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
     const hue = Math.abs(h) % 360;
     return `hsl(${hue},55%,45%)`;
+  }
+
+  const REALTIME_BOTS = new Set([
+    'ChatGPT-User', 'OAI-SearchBot', 'PerplexityBot', 'Claude-Web'
+  ]);
+  function botType(name) {
+    return REALTIME_BOTS.has(name) ? 'realtime' : 'indexing';
+  }
+  function typeBadge(name) {
+    const t = botType(name);
+    return t === 'realtime'
+      ? '<span class="type-badge type-realtime">Real-time</span>'
+      : '<span class="type-badge type-indexing">Indexing</span>';
   }
 
   // ── AUTH ──
@@ -1085,6 +1102,7 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
         <div class="bot-name-cell">
           <span class="bot-dot" style="background:${color}"></span>
           <span title="${escHtml(b.bot_name)}">${escHtml(b.bot_name)}</span>
+          ${typeBadge(b.bot_name)}
         </div>
         <div>
           <div class="bar-track">
@@ -1523,6 +1541,7 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
         <div class="cadence-card-header">
           <span style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0"></span>
           <span class="cadence-bot-name">${escHtml(b.bot_name)}</span>
+          ${typeBadge(b.bot_name)}
           <div style="margin-left:auto;text-align:right">
             <div class="cadence-total">${b.total_hits.toLocaleString()}</div>
             <div class="cadence-total-label">total hits</div>
@@ -1581,12 +1600,13 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
             <td class="ts-cell">${time}</td>
             <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 9px;border-radius:20px;background:${c}18;color:${c};border:1px solid ${c}35">
               <span style="width:5px;height:5px;background:${c};border-radius:50%;flex-shrink:0"></span>${escHtml(h.bot_name || 'Unknown')}</span></td>
+            <td>${typeBadge(h.bot_name || '')}</td>
             <td class="mono" title="${escHtml(h.url || '')}">${escHtml(h.url || '/')}</td>
             <td><span class="badge-country">${escHtml(h.country || '—')}</span></td>
             <td class="${ok ? 'status-ok' : 'status-err'}">${h.status_code || '—'}</td>
           </tr>`;
         }).join('')
-      : '<tr><td colspan="5" class="empty">No hits in this period</td></tr>';
+      : '<tr><td colspan="6" class="empty">No hits in this period</td></tr>';
   }
 
   // ── MODALS ──
