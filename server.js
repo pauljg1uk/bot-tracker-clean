@@ -129,7 +129,7 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
     const appUrl = 'https://aicrawler.befoundsearch.com';
     const phpScript = `<?php
 /**
- * BeFound AI Tracker v1.2
+ * BeFound AI Tracker v1.3
  * Client : ${client.name} (${client.domain})
  * =====================================================================
  *
@@ -188,7 +188,7 @@ define('DONOTMINIFY',       true);
 if (isset($_GET['bf_verify']) && $_GET['bf_verify'] === BF_VERIFY_TOKEN) {
   @header('Content-Type: application/json');
   @header('Cache-Control: no-store');
-  echo json_encode(['status' => 'active', 'client' => '${client.name}', 'v' => '1.2']);
+  echo json_encode(['status' => 'active', 'client' => '${client.name}', 'v' => '1.3']);
   exit;
 }
 
@@ -246,16 +246,28 @@ if ($bf_bot) {
     'referrer'    => isset($_SERVER['HTTP_REFERER'])      ? $_SERVER['HTTP_REFERER']      : null,
   ]);
 
-  // Send tracking request — non-blocking via FastCGI if available
+  // Send tracking request — use whichever non-blocking method is available
   $bf_api = BF_TRACKER_API;
-  if (function_exists('fastcgi_finish_request')) {
-    // FPM: page already sent to bot, we run in background
+
+  if (function_exists('wp_remote_post')) {
+    // Best method on WordPress/SiteGround: built-in non-blocking HTTP
+    // blocking=>false returns immediately without waiting for response
+    wp_remote_post($bf_api, [
+      'method'    => 'POST',
+      'timeout'   => 1,
+      'blocking'  => false,
+      'sslverify' => false,
+      'headers'   => ['Content-Type' => 'application/json'],
+      'body'      => $bf_payload,
+    ]);
+  } elseif (function_exists('fastcgi_finish_request')) {
+    // PHP-FPM without WordPress: close connection then send in background
     register_shutdown_function(function() use ($bf_api, $bf_payload) {
       fastcgi_finish_request();
       bf_send_hit($bf_api, $bf_payload);
     });
   } else {
-    // Non-FPM: fire immediately with short timeout (does not block noticeably)
+    // Non-FPM fallback: direct send with short timeout
     bf_send_hit($bf_api, $bf_payload);
   }
 }
