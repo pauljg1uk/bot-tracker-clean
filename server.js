@@ -286,7 +286,7 @@ function bf_send_hit($url, $payload) {
 }
 `;
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename="ai-search-tracker.php"');
+    res.setHeader('Content-Disposition', 'attachment; filename="bf-tracker.php"');
     res.send(phpScript);
   } catch (err) {
     console.error('PHP script error:', err.message);
