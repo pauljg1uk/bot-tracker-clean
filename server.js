@@ -124,7 +124,7 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
     const result = await pool.query('SELECT * FROM clients WHERE id = $1', [req.params.clientId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
     const client = result.rows[0];
-    const appUrl = (process.env.APP_URL || 'https://aicrawler.befoundsearch.com').replace(/\/$/, '');
+    const appUrl = 'https://aicrawler.befoundsearch.com';
     const phpScript = `<?php
 /**
  * BeFound AI Tracker
@@ -222,7 +222,7 @@ app.get('/api/clients/:clientId/worker-script', auth, async (req, res) => {
     const result = await pool.query('SELECT * FROM clients WHERE id = $1', [req.params.clientId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
     const client = result.rows[0];
-    const appUrl = (process.env.APP_URL || 'https://aicrawler.befoundsearch.com').replace(/\/$/, '');
+    const appUrl = 'https://aicrawler.befoundsearch.com';
     const workerScript = `// BeFound AI Tracker
 // Client: ${client.name} (${client.domain})
 // Do NOT edit the API_URL or CLIENT_API_KEY values below.
