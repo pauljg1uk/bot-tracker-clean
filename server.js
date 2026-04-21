@@ -3,6 +3,8 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 app.use(cors());
@@ -211,6 +213,97 @@ if (!defined('BF_BOT_TRACKER_LOADED')) {
     res.send(phpScript);
   } catch (err) {
     console.error('PHP script error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PAGE DATE FETCHER ──
+function extractModifiedDate(html, lastModHeader) {
+  let m;
+  m = html.match(/<meta[^>]+property=["']article:modified_time["'][^>]+content=["']([^"']+)["']/i)
+     || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']article:modified_time["']/i);
+  if (m) return m[1];
+  m = html.match(/"dateModified"\s*:\s*"([^"]+)"/);
+  if (m) return m[1];
+  return lastModHeader || null;
+}
+
+function extractPageDates(html, lastModHeader) {
+  let m;
+  // article:published_time (Open Graph / WordPress Yoast)
+  m = html.match(/<meta[^>]+property=["']article:published_time["'][^>]+content=["']([^"']+)["']/i)
+     || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']article:published_time["']/i);
+  if (m) return { published: m[1], modified: extractModifiedDate(html, lastModHeader), source: 'og:article' };
+  // meta name=datePublished
+  m = html.match(/<meta[^>]+name=["']datePublished["'][^>]+content=["']([^"']+)["']/i)
+     || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']datePublished["']/i);
+  if (m) return { published: m[1], modified: extractModifiedDate(html, lastModHeader), source: 'meta:datePublished' };
+  // JSON-LD datePublished
+  m = html.match(/"datePublished"\s*:\s*"([^"]+)"/);
+  if (m) return { published: m[1], modified: extractModifiedDate(html, lastModHeader), source: 'json-ld' };
+  // pubdate / DC.date
+  m = html.match(/<meta[^>]+name=["']pubdate["'][^>]+content=["']([^"']+)["']/i)
+     || html.match(/<meta[^>]+name=["']DC\.date["'][^>]+content=["']([^"']+)["']/i);
+  if (m) return { published: m[1], modified: extractModifiedDate(html, lastModHeader), source: 'meta:pubdate' };
+  // Last-Modified header as last resort
+  if (lastModHeader) return { published: null, modified: lastModHeader, source: 'http-header' };
+  return { published: null, modified: null, source: null };
+}
+
+function fetchPageDates(url, domain) {
+  return new Promise((resolve) => {
+    let fullUrl = url;
+    if (url.startsWith('/')) fullUrl = 'https://' + domain.replace(/^https?:\/\//, '').replace(/\/$/, '') + url;
+    const done = (result) => resolve({ url, ...result });
+    let resolved = false;
+    const finish = (result) => { if (!resolved) { resolved = true; done(result); } };
+    const timer = setTimeout(() => finish({ published: null, modified: null, source: 'timeout' }), 6000);
+    try {
+      const mod = fullUrl.startsWith('https') ? https : http;
+      const req = mod.get(fullUrl, {
+        headers: { 'User-Agent': 'BeFound-AITracker-DateCheck/1.0', 'Accept': 'text/html' },
+        timeout: 5000
+      }, (res) => {
+        const lastMod = res.headers['last-modified'] || null;
+        let html = '';
+        res.on('data', chunk => {
+          html += chunk.toString();
+          if (html.includes('</head>') || html.length > 80000) { try { req.destroy(); } catch(e) {} }
+        });
+        res.on('close', () => { clearTimeout(timer); finish(extractPageDates(html, lastMod)); });
+        res.on('error', () => { clearTimeout(timer); finish({ published: null, modified: null, source: 'error' }); });
+      });
+      req.on('error', () => { clearTimeout(timer); finish({ published: null, modified: null, source: 'error' }); });
+      req.on('timeout', () => { try { req.destroy(); } catch(e) {} clearTimeout(timer); finish({ published: null, modified: null, source: 'timeout' }); });
+    } catch(e) {
+      clearTimeout(timer);
+      finish({ published: null, modified: null, source: 'error' });
+    }
+  });
+}
+
+app.get('/api/clients/:clientId/page-dates', auth, async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const clientResult = await pool.query('SELECT domain FROM clients WHERE id = $1', [req.params.clientId]);
+    if (!clientResult.rows.length) return res.status(404).json({ error: 'Not found' });
+    const domain = clientResult.rows[0].domain;
+    const daysInt = Math.min(parseInt(days) || 30, 90);
+    const pagesResult = await pool.query(
+      `SELECT url, COUNT(*) AS hits FROM bot_hits
+       WHERE client_id = $1 AND timestamp >= NOW() - INTERVAL '${daysInt} days'
+       GROUP BY url ORDER BY hits DESC LIMIT 25`,
+      [req.params.clientId]
+    );
+    const urls = pagesResult.rows.map(r => r.url);
+    const results = [];
+    for (let i = 0; i < urls.length; i += 5) {
+      const batch = await Promise.all(urls.slice(i, i + 5).map(u => fetchPageDates(u, domain)));
+      results.push(...batch);
+    }
+    res.json({ pages: results });
+  } catch (err) {
+    console.error('page-dates error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
