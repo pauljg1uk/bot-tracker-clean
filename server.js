@@ -129,115 +129,159 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
     const appUrl = 'https://aicrawler.befoundsearch.com';
     const phpScript = `<?php
 /**
- * BeFound AI Tracker
+ * BeFound AI Tracker v1.2
  * Client : ${client.name} (${client.domain})
+ * =====================================================================
  *
- * INSTALLATION (choose ONE method):
+ * INSTALLATION — WordPress (RECOMMENDED METHOD):
+ *   1. Upload this file to:  wp-content/mu-plugins/bf-tracker.php
+ *      (Create the mu-plugins folder if it does not exist)
+ *   That is all. No functions.php edit needed. It loads automatically.
  *
- * METHOD A — WordPress sites (RECOMMENDED):
- *   1. Upload this file to your WordPress root (same folder as wp-config.php)
- *   2. Add these lines near the top of your functions.php (Appearance > Theme File Editor):
+ * INSTALLATION — Non-WordPress PHP:
+ *   Add to the very top of every PHP page (before any output):
+ *   <?php require_once '/path/to/bf-tracker.php'; ?>
  *
- *   add_action('init', function() {
- *     require_once ABSPATH . 'ai-search-tracker.php';
- *   });
+ * ── IMPORTANT: CACHING BYPASS ─────────────────────────────────────
+ * AI bots receive cached pages by default, which means PHP never runs
+ * and visits go untracked. You MUST bypass cache for known bot UAs:
  *
- * METHOD B — Non-WordPress PHP sites:
- *   Add this line to the top of every PHP page you want to track (e.g. index.php, header.php):
- *   <?php require_once __DIR__ . '/ai-search-tracker.php'; ?>
+ *  WP Rocket  → Settings › Advanced Rules › Never Cache User Agent
+ *  W3 Total Cache → Performance › Page Cache › Rejected User Agents
+ *  WP Super Cache → Settings › Advanced › Accepted Filenames & Rejected UAs
+ *  LiteSpeed Cache → Cache › Exclude › Do Not Cache User Agents
  *
- * DO NOT use .htaccess or php.ini — these almost always cause a 500 error on shared hosting.
+ * Paste this list into whichever field your plugin provides:
+ *   GPTBot
+ *   ChatGPT-User
+ *   OAI-SearchBot
+ *   ClaudeBot
+ *   Claude-Web
+ *   Google-Extended
+ *   Googlebot
+ *   PerplexityBot
+ *   Perplexity-User
+ *   bingbot
+ *   CopilotBot
+ *   Applebot
+ *
+ * ── VERIFY INSTALLATION ───────────────────────────────────────────
+ * Visit this URL to confirm the plugin is working:
+ *   ${client.domain.replace(/\/$/, '')}/?bf_verify=${client.api_key.slice(0,8)}
+ * You should see: {"status":"active","client":"${client.name}"}
  *
  * Do NOT edit the API key below.
  */
 
-if (!defined('BF_BOT_TRACKER_LOADED')) {
-  define('BF_BOT_TRACKER_LOADED', true);
-  define('BF_TRACKER_API', '${appUrl}/api/hit');
-  define('BF_CLIENT_KEY',  '${client.api_key}');
+if (defined('BF_BOT_TRACKER_LOADED')) return;
+define('BF_BOT_TRACKER_LOADED', true);
+define('BF_TRACKER_API',  '${appUrl}/api/hit');
+define('BF_CLIENT_KEY',   '${client.api_key}');
+define('BF_VERIFY_TOKEN', '${client.api_key.slice(0,8)}');
 
-  // Bot name => substring to match in User-Agent (case-insensitive)
-  $AI_BOTS = [
-    // OpenAI
-    'GPTBot'             => 'GPTBot',
-    'ChatGPT-User'       => 'ChatGPT-User',
-    'OAI-SearchBot'      => 'OAI-SearchBot',
-    // Anthropic / Claude
-    'ClaudeBot'          => 'ClaudeBot',
-    'Claude-Web'         => 'Claude-Web',
-    'anthropic-ai'       => 'anthropic-ai',
-    // Google AI (Gemini, AI Overviews)
-    'Google-Extended'    => 'Google-Extended',
-    'Googlebot'          => 'Googlebot',
-    // Perplexity
-    'PerplexityBot'      => 'PerplexityBot',
-    'Perplexity-User'    => 'Perplexity-User',
-    // Microsoft Copilot / Bing
-    'bingbot'            => 'bingbot',
-    'CopilotBot'         => 'CopilotBot',
-    // Apple Intelligence
-    'Applebot-Extended'  => 'Applebot-Extended',
-    'Applebot'           => 'Applebot',
-    // Meta AI
-    'Meta-ExternalAgent' => 'Meta-ExternalAgent',
-    'FacebookBot'        => 'FacebookBot',
-    // Others
-    'Bytespider'         => 'Bytespider',
-    'CCBot'              => 'CCBot',
-    'cohere-ai'          => 'cohere-ai',
-    'YouBot'             => 'YouBot',
-    'Diffbot'            => 'Diffbot',
-    'Amazonbot'          => 'Amazonbot',
-    'DuckAssistBot'      => 'DuckAssistBot',
-    'AI2Bot'             => 'AI2Bot',
-    'Timpibot'           => 'Timpibot',
-  ];
+// ── Cache bypass: tell PHP-level caching plugins not to cache this request ──
+define('DONOTCACHEPAGE',    true);
+define('DONOTCACHEDB',      true);
+define('DONOTMINIFY',       true);
 
-  $ua  = $_SERVER['HTTP_USER_AGENT'] ?? '';
-  $bot = null;
-  foreach ($AI_BOTS as $name => $pattern) {
-    if (stripos($ua, $pattern) !== false) { $bot = $name; break; }
-  }
+// ── Verify endpoint: ?bf_verify=XXXXXXXX ────────────────────────────────────
+if (isset($_GET['bf_verify']) && $_GET['bf_verify'] === BF_VERIFY_TOKEN) {
+  @header('Content-Type: application/json');
+  @header('Cache-Control: no-store');
+  echo json_encode(['status' => 'active', 'client' => '${client.name}', 'v' => '1.2']);
+  exit;
+}
 
-  if ($bot) {
-    $api_url = BF_TRACKER_API;
-    $api_key = BF_CLIENT_KEY;
-    $payload = json_encode([
-      'api_key'     => $api_key,
-      'url'         => $_SERVER['REQUEST_URI'] ?? '/',
-      'bot_name'    => $bot,
-      'user_agent'  => $ua,
-      'status_code' => http_response_code() ?: 200,
-      'country'     => $_SERVER['HTTP_CF_IPCOUNTRY'] ?? null,
-      'referrer'    => $_SERVER['HTTP_REFERER']      ?? null,
-    ]);
+// ── Bot detection ────────────────────────────────────────────────────────────
+$BF_BOTS = [
+  // OpenAI
+  'GPTBot'             => 'GPTBot',
+  'ChatGPT-User'       => 'ChatGPT-User',
+  'OAI-SearchBot'      => 'OAI-SearchBot',
+  // Anthropic / Claude
+  'ClaudeBot'          => 'ClaudeBot',
+  'Claude-Web'         => 'Claude-Web',
+  'anthropic-ai'       => 'anthropic-ai',
+  // Google AI (AI Overviews)
+  'Google-Extended'    => 'Google-Extended',
+  'Googlebot'          => 'Googlebot',
+  // Perplexity
+  'PerplexityBot'      => 'PerplexityBot',
+  'Perplexity-User'    => 'Perplexity-User',
+  // Microsoft Copilot / Bing
+  'bingbot'            => 'bingbot',
+  'CopilotBot'         => 'CopilotBot',
+  // Apple Intelligence
+  'Applebot-Extended'  => 'Applebot-Extended',
+  'Applebot'           => 'Applebot',
+  // Meta AI
+  'Meta-ExternalAgent' => 'Meta-ExternalAgent',
+  'FacebookBot'        => 'FacebookBot',
+  // Others
+  'Bytespider'         => 'Bytespider',
+  'CCBot'              => 'CCBot',
+  'cohere-ai'          => 'cohere-ai',
+  'YouBot'             => 'YouBot',
+  'Diffbot'            => 'Diffbot',
+  'Amazonbot'          => 'Amazonbot',
+  'DuckAssistBot'      => 'DuckAssistBot',
+  'AI2Bot'             => 'AI2Bot',
+  'Timpibot'           => 'Timpibot',
+];
 
-    // Fire AFTER the page has been sent to the bot so tracking never slows the response
-    register_shutdown_function(function() use ($api_url, $payload) {
-      if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
-      if (function_exists('curl_init')) {
-        $ch = curl_init($api_url);
-        curl_setopt_array($ch, [
-          CURLOPT_POST           => true,
-          CURLOPT_POSTFIELDS     => $payload,
-          CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_TIMEOUT        => 5,
-          CURLOPT_CONNECTTIMEOUT => 3,
-          CURLOPT_SSL_VERIFYPEER => false,
-        ]);
-        @curl_exec($ch);
-        curl_close($ch);
-      } elseif (ini_get('allow_url_fopen')) {
-        $ctx = stream_context_create(['http' => [
-          'method'  => 'POST',
-          'header'  => "Content-Type: application/json\r\nContent-Length: " . strlen($payload),
-          'content' => $payload,
-          'timeout' => 4,
-        ]]);
-        @file_get_contents($api_url, false, $ctx);
-      }
+$bf_ua  = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+$bf_bot = null;
+foreach ($BF_BOTS as $name => $pattern) {
+  if (stripos($bf_ua, $pattern) !== false) { $bf_bot = $name; break; }
+}
+
+if ($bf_bot) {
+  $bf_payload = json_encode([
+    'api_key'     => BF_CLIENT_KEY,
+    'url'         => isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/',
+    'bot_name'    => $bf_bot,
+    'user_agent'  => $bf_ua,
+    'status_code' => (function_exists('http_response_code') ? http_response_code() : null) ?: 200,
+    'country'     => isset($_SERVER['HTTP_CF_IPCOUNTRY']) ? $_SERVER['HTTP_CF_IPCOUNTRY'] : null,
+    'referrer'    => isset($_SERVER['HTTP_REFERER'])      ? $_SERVER['HTTP_REFERER']      : null,
+  ]);
+
+  // Send tracking request — non-blocking via FastCGI if available
+  $bf_api = BF_TRACKER_API;
+  if (function_exists('fastcgi_finish_request')) {
+    // FPM: page already sent to bot, we run in background
+    register_shutdown_function(function() use ($bf_api, $bf_payload) {
+      fastcgi_finish_request();
+      bf_send_hit($bf_api, $bf_payload);
     });
+  } else {
+    // Non-FPM: fire immediately with short timeout (does not block noticeably)
+    bf_send_hit($bf_api, $bf_payload);
+  }
+}
+
+function bf_send_hit($url, $payload) {
+  if (function_exists('curl_init')) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+      CURLOPT_POST           => true,
+      CURLOPT_POSTFIELDS     => $payload,
+      CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_TIMEOUT        => 4,
+      CURLOPT_CONNECTTIMEOUT => 3,
+      CURLOPT_SSL_VERIFYPEER => false,
+      CURLOPT_NOSIGNAL       => 1,
+    ]);
+    @curl_exec($ch);
+    curl_close($ch);
+  } elseif (ini_get('allow_url_fopen')) {
+    @file_get_contents($url, false, stream_context_create(['http' => [
+      'method'  => 'POST',
+      'header'  => "Content-Type: application/json\r\nContent-Length: " . strlen($payload),
+      'content' => $payload,
+      'timeout' => 3,
+    ]]));
   }
 }
 `;
@@ -425,6 +469,58 @@ export default {
     res.send(workerScript);
   } catch (err) {
     console.error('Worker script error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── VERIFY PLUGIN INSTALLATION ──
+app.get('/api/clients/:clientId/verify', auth, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT domain, api_key, name FROM clients WHERE id=$1', [req.params.clientId]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Client not found' });
+    const { domain, api_key, name } = result.rows[0];
+    const token = api_key.slice(0, 8);
+    let base = domain.trim().replace(/\/$/, '');
+    if (!base.startsWith('http')) base = 'https://' + base;
+    const verifyUrl = base + '/?bf_verify=' + token;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const resp = await fetch(verifyUrl, {
+        headers: { 'User-Agent': 'BeFound-Verify/1.0', 'Accept': 'application/json' },
+        signal: controller.signal,
+        redirect: 'follow',
+      });
+      clearTimeout(timeout);
+      const text = await resp.text();
+      let json = null;
+      try { json = JSON.parse(text); } catch(e) {}
+      if (json && json.status === 'active') {
+        res.json({ ok: true, message: 'Plugin is active on ' + name, version: json.v || '?' });
+      } else {
+        res.json({ ok: false, message: 'Plugin not detected. Make sure the file is installed in wp-content/mu-plugins/ and not still in the WordPress root.' });
+      }
+    } catch(fetchErr) {
+      res.json({ ok: false, message: 'Could not reach ' + base + ' — check the domain is correct and the site is online.' });
+    }
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── SEND TEST HIT (simulates a bot visit for testing) ──
+app.post('/api/clients/:clientId/test-hit', auth, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name FROM clients WHERE id=$1', [req.params.clientId]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    const clientId = result.rows[0].id;
+    await pool.query(
+      `INSERT INTO bot_hits (client_id, url, bot_name, user_agent, status_code, country, referrer)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [clientId, '/', 'GPTBot', 'Mozilla/5.0 (compatible; GPTBot/1.1; +https://openai.com/gptbot) [BeFound-Test]', 200, 'GB', null]
+    );
+    res.json({ ok: true, message: 'Test hit recorded as GPTBot on /' });
+  } catch(err) {
     res.status(500).json({ error: err.message });
   }
 });

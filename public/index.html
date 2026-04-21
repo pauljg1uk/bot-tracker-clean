@@ -2060,6 +2060,8 @@ function openManageClients() {
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
               <button class="btn-sm-ghost" style="padding:5px 10px;font-size:11px;background:var(--green);color:#fff;border-color:var(--green)" onclick="${c.tracking_method === 'cloudflare' ? `downloadWorker('${c.id}')` : `downloadPHP('${c.id}')`}">↓ Script</button>
+              <button class="btn-sm-ghost" style="padding:5px 10px;font-size:11px;background:#0ea5e9;color:#fff;border-color:#0ea5e9" data-verify-id="${c.id}">Verify Plugin</button>
+              <button class="btn-sm-ghost" style="padding:5px 10px;font-size:11px;background:#6b4fbb;color:#fff;border-color:#6b4fbb" data-testhit-id="${c.id}">Test Hit</button>
               <button class="btn-sm-ghost" style="padding:5px 12px;font-size:12px" data-edit-id="${c.id}">Edit</button>
               <button class="btn-danger" data-delete-id="${c.id}">Delete</button>
             </div>
@@ -2071,6 +2073,12 @@ function openManageClients() {
         });
         list.querySelectorAll('[data-delete-id]').forEach(btn => {
           btn.addEventListener('click', () => deleteClient(btn.dataset.deleteId, btn));
+        });
+        list.querySelectorAll('[data-verify-id]').forEach(btn => {
+          btn.addEventListener('click', () => verifyPlugin(btn.dataset.verifyId, btn));
+        });
+        list.querySelectorAll('[data-testhit-id]').forEach(btn => {
+          btn.addEventListener('click', () => sendTestHit(btn.dataset.testhitId, btn));
         });
       }
       document.getElementById('manage-clients-modal').classList.add('open');
@@ -2158,20 +2166,40 @@ function openManageClients() {
           </div>
         `;
       } else {
-        const functionsPhpCode = `add_action('init', function() {\n  require_once ABSPATH . 'bot-tracker.php';\n});`;
+        const cacheUAs = `GPTBot\nChatGPT-User\nOAI-SearchBot\nClaudeBot\nClaude-Web\nGoogle-Extended\nGooglebot\nPerplexityBot\nPerplexity-User\nbingbot\nCopilotBot\nApplebot`;
         instructions.innerHTML = `
-          <strong style="display:block;margin-bottom:12px;color:var(--text)">WordPress setup (recommended)</strong>
-          ${step(1, `<div style="margin-bottom:8px">Download the pre-configured PHP file and upload it to the <strong>WordPress root</strong> — same folder as ${code('wp-config.php')}.</div>
-            <button onclick="downloadPHP('${client.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">↓ Download bot-tracker.php</button>`)}
-          ${step(2, `<div style="margin-bottom:8px">Go to <strong>Appearance → Theme File Editor → functions.php</strong> and add these lines near the top, after the opening ${code('<?php')}:</div>
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:var(--green-text);white-space:pre;margin-bottom:8px" id="htaccess-line">${escHtml(functionsPhpCode)}</div>
+          <strong style="display:block;margin-bottom:12px;color:var(--text)">WordPress setup — mu-plugins method</strong>
+
+          ${step(1, `Download the pre-configured PHP file:
+            <br><br>
+            <button onclick="downloadPHP('${client.id}')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">↓ Download bf-tracker.php</button>
+            <br><br>
+            Using FTP/SFTP or your host's File Manager, upload it to <strong>wp-content/mu-plugins/bf-tracker.php</strong>.<br>
+            <em style="color:var(--muted);font-size:12px">Create the mu-plugins folder if it does not exist. No functions.php edit needed — mu-plugins load automatically on every request, earlier than regular plugins.</em>`)}
+
+          ${step(2, `<div style="margin-bottom:8px"><strong style="color:#c0392b">Critical — bypass your caching plugin for AI bots.</strong> Without this step, AI bots receive a cached page and PHP never runs.</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
+              <strong style="color:var(--text)">WP Rocket</strong> → Settings → Advanced Rules → <em>Never Cache User Agent</em><br>
+              <strong style="color:var(--text)">W3 Total Cache</strong> → Performance → Page Cache → <em>Rejected User Agents</em><br>
+              <strong style="color:var(--text)">WP Super Cache</strong> → Settings → Advanced → <em>Rejected User Agents</em><br>
+              <strong style="color:var(--text)">LiteSpeed Cache</strong> → Cache → Exclude → <em>Do Not Cache User Agents</em>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Paste this list into the field:</div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:monospace;font-size:11px;color:var(--green-text);white-space:pre;margin-bottom:8px" id="htaccess-line">${cacheUAs}</div>
             <div style="display:flex;align-items:center;gap:10px">
-              <button onclick="copyHtaccess()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer">Copy code</button>
+              <button onclick="copyHtaccess()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer">Copy list</button>
               <span id="copy-confirm" style="display:none;color:var(--green);font-size:12px;font-weight:500">Copied!</span>
             </div>`)}
-          <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted)">
-            <strong style="color:var(--text)">Not WordPress?</strong> Add ${code('<?php require_once __DIR__ . \'/bot-tracker.php\'; ?>')} to the top of your main PHP file (e.g. index.php or header.php).<br>
-            <strong style="color:#c0392b">Do NOT use .htaccess or php.ini</strong> — these cause 500 errors on most shared hosts.
+
+          ${step(3, `Click <strong>Verify Plugin</strong> next to this client in the Manage Clients list to confirm the installation is working.`)}
+
+          <div style="margin-top:14px;padding:11px 14px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;font-size:12px;color:#78350f">
+            <strong>Server-level caching (Nginx, LiteSpeed, Varnish)</strong> runs before PHP and cannot be bypassed by a PHP plugin. If your host uses server-level caching, use the <strong>Cloudflare Worker method</strong> instead — it intercepts requests at the edge before any cache is served.<br>
+            <strong>Note on Gemini:</strong> Gemini uses Google's existing search index and does not crawl pages in real-time when a user types a query. Visits from Google-Extended/Googlebot appear when Google re-indexes the site.
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted)">
+            <strong style="color:var(--text)">Not WordPress?</strong> Add ${code('<?php require_once __DIR__ . \'/bf-tracker.php\'; ?>')} to the very top of your main PHP file before any output.
           </div>
         `;
       }
@@ -2185,6 +2213,58 @@ function openManageClients() {
 
   function downloadWorker(clientId) {
     window.location.href = `/api/clients/${clientId}/worker-script?auth=${btoa('admin:' + password)}`;
+  }
+
+  // ── VERIFY PLUGIN ──────────────────────────────────────────────
+  async function verifyPlugin(clientId, btn) {
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    try {
+      const data = await fetch('/api/clients/' + clientId + '/verify', { headers: authHeaders() }).then(r => r.json());
+      showToast(data.ok ? '✓ ' + data.message : '✗ ' + data.message, data.ok ? 'success' : 'error');
+    } catch(e) {
+      showToast('✗ Network error', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  // ── TEST HIT ───────────────────────────────────────────────────
+  async function sendTestHit(clientId, btn) {
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const data = await fetch('/api/clients/' + clientId + '/test-hit', {
+        method: 'POST',
+        headers: authHeaders()
+      }).then(r => r.json());
+      showToast(data.ok ? '✓ ' + data.message + ' — refresh the dashboard to see it.' : '✗ ' + (data.error || 'Error'), data.ok ? 'success' : 'error');
+    } catch(e) {
+      showToast('✗ Network error', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  // ── TOAST NOTIFICATION ─────────────────────────────────────────
+  function showToast(msg, type) {
+    let el = document.getElementById('bf-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'bf-toast';
+      el.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;max-width:480px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.35);transition:opacity .3s';
+      document.body.appendChild(el);
+    }
+    el.style.background = type === 'success' ? '#16a34a' : '#dc2626';
+    el.style.color = '#fff';
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 4500);
   }
 
   function copyHtaccess() {
