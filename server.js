@@ -137,12 +137,12 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
  *   2. Add these lines near the top of your functions.php (Appearance > Theme File Editor):
  *
  *   add_action('init', function() {
- *     require_once ABSPATH . 'bot-tracker.php';
+ *     require_once ABSPATH . 'ai-search-tracker.php';
  *   });
  *
  * METHOD B — Non-WordPress PHP sites:
  *   Add this line to the top of every PHP page you want to track (e.g. index.php, header.php):
- *   <?php require_once __DIR__ . '/bot-tracker.php'; ?>
+ *   <?php require_once __DIR__ . '/ai-search-tracker.php'; ?>
  *
  * DO NOT use .htaccess or php.ini — these almost always cause a 500 error on shared hosting.
  *
@@ -208,7 +208,7 @@ if (!defined('BF_BOT_TRACKER_LOADED')) {
 }
 `;
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename="bot-tracker.php"');
+    res.setHeader('Content-Disposition', 'attachment; filename="ai-search-tracker.php"');
     res.send(phpScript);
   } catch (err) {
     console.error('PHP script error:', err.message);
