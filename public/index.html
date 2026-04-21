@@ -118,7 +118,7 @@
     /* ── PANELS ── */
     .panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 22px 24px; margin-bottom: 14px; }
     .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
-    .panel-title { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+    .panel-title { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
     .panel-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
     .dash-section { margin-bottom: 8px; }
     .dash-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted2); margin-bottom: 10px; }
@@ -149,20 +149,21 @@
     .sc-intel:hover { border-color:#e57c23; }
     .sc-icon-intel { background:#fff5ec; }
     .sc-icon-intel svg { fill:#e57c23; }
-    .intel-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
-    .intel-kpi { border-radius:14px; padding:16px 18px; border:1.5px solid; }
-    .intel-kpi-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
-    .intel-kpi-icon svg { width:18px; height:18px; }
-    .intel-kpi-val { font-size:28px; font-weight:800; line-height:1; margin-bottom:4px; }
-    .intel-kpi-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted2); }
-    .intel-kpi-sub { font-size:11px; color:var(--muted); margin-top:3px; }
-    .intel-section-panel { border-radius:14px; border:1.5px solid; overflow:hidden; margin-bottom:14px; }
-    .intel-panel-head { display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid; }
-    .intel-panel-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .intel-panel-icon svg { width:16px; height:16px; }
-    .intel-panel-title { font-size:14px; font-weight:700; line-height:1.2; }
-    .intel-panel-sub { font-size:11px; margin-top:3px; opacity:.75; }
-    .intel-panel-body { padding:14px 18px; }
+    .intel-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+    .intel-kpi { border-radius:18px; padding:20px 20px 16px; border:1.5px solid; position:relative; overflow:hidden; }
+    .intel-kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; border-radius:18px 18px 0 0; background:currentColor; opacity:.35; }
+    .intel-kpi-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+    .intel-kpi-icon svg { width:20px; height:20px; }
+    .intel-kpi-val { font-size:42px; font-weight:800; line-height:1; margin-bottom:4px; letter-spacing:-0.04em; }
+    .intel-kpi-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted2); }
+    .intel-kpi-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+    .intel-section-panel { border-radius:18px; border:1.5px solid; overflow:hidden; margin-bottom:14px; }
+    .intel-panel-head { display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid; }
+    .intel-panel-icon { width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .intel-panel-icon svg { width:18px; height:18px; }
+    .intel-panel-title { font-size:16px; font-weight:800; line-height:1.2; letter-spacing:-0.02em; }
+    .intel-panel-sub { font-size:12px; margin-top:4px; opacity:.8; }
+    .intel-panel-body { padding:16px 20px; }
     .intel-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:0; }
     .intel-section-grid .intel-section-panel { margin-bottom:0; }
     .intel-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
@@ -232,11 +233,11 @@
 
     /* ── PAGES VIEW ── */
     #pages-view { display: none; }
-    .pv-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .pv-back { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; transition: all 0.15s; }
-    .pv-back:hover { color: var(--text); border-color: var(--border2); }
-    .pv-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; flex: 1; }
-    .pv-sub { font-size: 13px; color: var(--muted); }
+    .pv-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .pv-back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; color: var(--muted2); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; flex-shrink:0; }
+    .pv-back:hover { color: var(--text); border-color: var(--green); box-shadow:0 2px 8px rgba(74,125,99,.12); }
+    .pv-title { font-size: 28px; font-weight: 900; letter-spacing: -0.04em; line-height:1.1; }
+    .pv-sub { font-size: 13px; color: var(--muted); margin-top:3px; }
     .pv-filters { display: flex; align-items: center; gap: 8px; }
     .pv-bot-filter { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; cursor: pointer; }
     .pv-bot-filter:focus { border-color: var(--green); }
@@ -334,8 +335,8 @@
     .pdp-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 200; justify-content: flex-end; }
     .pdp-overlay.open { display: flex; }
     .pdp-box { width: 520px; max-width: 100vw; background: var(--surface); height: 100%; overflow-y: auto; box-shadow: -4px 0 32px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
-    .pdp-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 24px 24px 16px; border-bottom: 1px solid var(--border); }
-    .pdp-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .pdp-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 24px 24px 18px; border-bottom: 1px solid var(--border); }
+    .pdp-title { font-size: 22px; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 6px; line-height:1.1; }
     .pdp-url { font-size: 12px; font-family: monospace; color: var(--green-text); text-decoration: none; }
     .pdp-url:hover { text-decoration: underline; }
     .pdp-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; width: 32px; height: 32px; font-size: 16px; cursor: pointer; color: var(--muted); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -631,6 +632,7 @@
           Dashboard
         </button>
         <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin-bottom:6px">/pages</div>
           <div class="pv-title" id="pv-title">Pages Analysis</div>
           <div class="pv-sub" id="pv-sub"></div>
         </div>
@@ -651,7 +653,10 @@
       <!-- Horizontal rank chart -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Hit Distribution</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="panel-title">Hit Distribution</span>
+            <span class="panel-pill" style="background:#ede9ff;color:#5b21b6">Rank</span>
+          </div>
           <span id="pv-chart-label" style="font-size:12px;color:var(--muted)"></span>
         </div>
         <div class="rank-chart" id="pv-rank-chart"></div>
@@ -660,7 +665,10 @@
       <!-- Full pages table -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">All Pages</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="panel-title">All Pages</span>
+            <span class="panel-pill" style="background:#dcf0e6;color:#2d6b4a">Full List</span>
+          </div>
           <span id="pv-table-label" style="font-size:12px;color:var(--muted)"></span>
         </div>
         <div class="scroll-table">
@@ -683,7 +691,10 @@
       <div id="pv-cadence" style="display:none">
         <div class="panel">
           <div class="panel-header">
-            <span class="panel-title">Bot Crawl Cadence</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="panel-title">Bot Crawl Cadence</span>
+              <span class="panel-pill" style="background:#f3e8ff;color:#6d28d9">Timing</span>
+            </div>
             <div style="display:flex;align-items:center;gap:10px">
               <span id="cadence-label" style="font-size:12px;color:var(--muted)"></span>
               <button class="export-btn" onclick="exportCadenceCsv()" title="Export cadence data to Excel/CSV">
@@ -707,6 +718,7 @@
           Dashboard
         </button>
         <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin-bottom:6px">/intelligence</div>
           <div class="pv-title">Page Intelligence</div>
           <div class="pv-sub">How AI bots interact with your content</div>
         </div>
