@@ -149,11 +149,10 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
  * Do NOT edit the API key below.
  */
 
-define('BF_TRACKER_API', '${appUrl}/api/hit');
-define('BF_CLIENT_KEY',  '${client.api_key}');
-
 if (!defined('BF_BOT_TRACKER_LOADED')) {
   define('BF_BOT_TRACKER_LOADED', true);
+  define('BF_TRACKER_API', '${appUrl}/api/hit');
+  define('BF_CLIENT_KEY',  '${client.api_key}');
 
   $AI_BOTS = [
     'GPTBot'=>'GPTBot','ChatGPT-User'=>'ChatGPT-User','OAI-SearchBot'=>'OAI-SearchBot',
