@@ -171,6 +171,14 @@
     .intel-empty-state { display:flex; flex-direction:column; align-items:center; padding:30px 16px; text-align:center; gap:6px; }
     .intel-empty-icon { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
     .intel-empty-icon svg { width:22px; height:22px; }
+    .intel-export-btn { display:flex; align-items:center; gap:5px; background:transparent; border:1px solid var(--border); border-radius:8px; padding:5px 10px; font-size:11px; font-weight:600; color:var(--muted2); cursor:pointer; flex-shrink:0; transition:all .15s; margin-left:auto; }
+    .intel-export-btn:hover { background:var(--surface2); color:var(--text); }
+    .intel-age-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .intel-age-label { width:90px; font-size:12px; font-weight:700; flex-shrink:0; }
+    .intel-age-track { flex:1; height:20px; background:var(--surface2); border-radius:6px; overflow:hidden; position:relative; }
+    .intel-age-fill { height:100%; border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:6px; }
+    .intel-age-pct { font-size:10px; font-weight:700; color:#fff; }
+    .intel-age-count { font-size:12px; font-weight:700; width:52px; text-align:right; flex-shrink:0; }
     .bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .bot-hits-cell { font-size: 13px; font-weight: 600; text-align: right; }
@@ -720,10 +728,11 @@
           <div class="intel-panel-icon" style="background:#4a7d6320">
             <svg viewBox="0 0 24 24" fill="#4a7d63"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
           </div>
-          <div>
+          <div style="flex:1">
             <div class="intel-panel-title" style="color:#2d5a42">Most Crawled Pages</div>
             <div class="intel-panel-sub" style="color:#2d5a42">Prime AI citation candidates — bots keep returning to these pages</div>
           </div>
+          <button class="intel-export-btn" onclick="exportIntelMostCrawled()"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
         </div>
         <div class="intel-panel-body" id="intel-most-crawled"><div class="empty">Loading…</div></div>
       </div>
@@ -741,6 +750,7 @@
               <div class="intel-panel-title" style="color:#0369a1">Pages Humans Visit After AI Referrals</div>
               <div class="intel-panel-sub" style="color:#0369a1">Real ROI — a live user's query triggered these fetches</div>
             </div>
+            <button class="intel-export-btn" onclick="exportIntelRealtime()"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
           </div>
           <div class="intel-panel-body" id="intel-realtime"><div class="empty">Loading…</div></div>
         </div>
@@ -755,6 +765,7 @@
               <div class="intel-panel-title" style="color:#92400e">Weak / Cold Pages</div>
               <div class="intel-panel-sub" style="color:#92400e">Likely weak internal linking or poor discoverability</div>
             </div>
+            <button class="intel-export-btn" onclick="exportIntelCold()"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
           </div>
           <div class="intel-panel-body" id="intel-cold"><div class="empty">Loading…</div></div>
         </div>
@@ -769,6 +780,7 @@
               <div class="intel-panel-title" style="color:#4c1d95">Schema-Rich Pages</div>
               <div class="intel-panel-sub" style="color:#4c1d95">Pages attracting multiple unique AI crawlers — validates structured data</div>
             </div>
+            <button class="intel-export-btn" onclick="exportIntelDiversity()"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
           </div>
           <div class="intel-panel-body" id="intel-diversity"><div class="empty">Loading…</div></div>
         </div>
@@ -783,11 +795,28 @@
               <div class="intel-panel-title" style="color:#334155">Crawl Health</div>
               <div class="intel-panel-sub" style="color:#334155">Response codes received by AI bots</div>
             </div>
+            <button class="intel-export-btn" onclick="exportIntelStatus()"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
           </div>
           <div class="intel-panel-body" id="intel-status"><div class="empty">Loading…</div></div>
         </div>
 
       </div><!-- /intel-section-grid -->
+
+      <!-- F: Content Age (indigo/violet) -->
+      <div class="intel-section-panel" style="border-color:#7c3aed30;margin-top:0">
+        <div class="intel-panel-head" style="border-color:#7c3aed20;background:#7c3aed08">
+          <div class="intel-panel-icon" style="background:#7c3aed20">
+            <svg viewBox="0 0 24 24" fill="#7c3aed"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L11 13V7h1.5v5.25l4.5 2.67-.77 1.33z"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="intel-panel-title" style="color:#5b21b6">Content Age Being Crawled</div>
+            <div class="intel-panel-sub" style="color:#5b21b6">Publishing year of pages AI bots are retrieving — shows if bots prefer new or older content</div>
+          </div>
+          <button class="intel-export-btn" onclick="exportIntelContentAge()"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
+        </div>
+        <div class="intel-panel-body" id="intel-content-age"><div class="empty">Loading…</div></div>
+      </div>
+
     </div><!-- /intel-view -->
 
     <!-- PAGE DETAIL PANEL -->
@@ -982,7 +1011,13 @@
     activeDays = days;
     document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
-    loadClient();
+    if (document.getElementById('intel-view').style.display === 'block') {
+      loadIntelData();
+    } else if (document.getElementById('pages-view').style.display === 'block') {
+      loadPagesView && loadPagesView();
+    } else {
+      loadClient();
+    }
   }
 
   // ── EXPORT UTILITIES ──
@@ -1994,6 +2029,7 @@ function openManageClients() {
   }
 
   // ── PAGE INTELLIGENCE ──
+  let _intelData = null;
   function openIntelView() {
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('pages-view').style.display = 'none';
@@ -2006,24 +2042,70 @@ function openManageClients() {
   }
   function loadIntelData() {
     const clientId = document.getElementById('client-select').value;
-    ['intel-most-crawled','intel-realtime','intel-cold','intel-status','intel-diversity'].forEach(id => {
+    ['intel-most-crawled','intel-realtime','intel-cold','intel-status','intel-diversity','intel-content-age'].forEach(id => {
       document.getElementById(id).innerHTML = '<div class="empty">Loading…</div>';
     });
     fetch('/api/clients/' + clientId + '/page-intel?days=' + activeDays, { headers: authHeaders() })
       .then(r => r.json())
       .then(data => {
+        _intelData = data;
         renderIntelKpis(data);
         renderIntelMostCrawled(data.mostCrawled || []);
         renderIntelRealtime(data.realtimePages || []);
         renderIntelCold(data.coldPages || []);
         renderIntelDiversity(data.mostCrawled || []);
         renderIntelStatus(data.statusBreakdown || []);
+        renderIntelContentAge(data.mostCrawled || []);
       })
       .catch(() => {
-        ['intel-most-crawled','intel-realtime','intel-cold','intel-status','intel-diversity'].forEach(id => {
+        ['intel-most-crawled','intel-realtime','intel-cold','intel-status','intel-diversity','intel-content-age'].forEach(id => {
           document.getElementById(id).innerHTML = '<div class="empty">Error loading data</div>';
         });
       });
+  }
+
+  // ── INTEL EXPORTS ──
+  function _intelClientSlug() {
+    const sel = document.getElementById('client-select');
+    return (sel.options[sel.selectedIndex]?.text || 'client').toLowerCase().replace(/\s+/g,'-');
+  }
+  function exportIntelMostCrawled() {
+    const rows = (_intelData?.mostCrawled || []);
+    if (!rows.length) return;
+    downloadCsv([['#','URL','Hits','Unique Bots','Bot Names']].concat(rows.map((p,i) => [i+1, p.url, p.hits, p.unique_bots, (p.bot_names||[]).join('; ')])),
+      _intelClientSlug() + '-most-crawled-' + activeDays + 'd.csv');
+  }
+  function exportIntelRealtime() {
+    const rows = (_intelData?.realtimePages || []);
+    if (!rows.length) return;
+    downloadCsv([['URL','Bot','Hits','Last Seen']].concat(rows.map(r => [r.url, r.bot_name, r.hits, r.last_seen])),
+      _intelClientSlug() + '-ai-cited-' + activeDays + 'd.csv');
+  }
+  function exportIntelCold() {
+    const rows = (_intelData?.coldPages || []);
+    if (!rows.length) return;
+    downloadCsv([['URL','Total Hits','Last Seen']].concat(rows.map(r => [r.url, r.total_hits, r.last_seen])),
+      _intelClientSlug() + '-cold-pages-' + activeDays + 'd.csv');
+  }
+  function exportIntelDiversity() {
+    const pages = (_intelData?.mostCrawled || []).filter(p => p.unique_bots >= 2).sort((a,b) => b.unique_bots - a.unique_bots);
+    if (!pages.length) return;
+    downloadCsv([['URL','Unique Bots','Hits','Bot Names']].concat(pages.map(p => [p.url, p.unique_bots, p.hits, (p.bot_names||[]).join('; ')])),
+      _intelClientSlug() + '-schema-rich-' + activeDays + 'd.csv');
+  }
+  function exportIntelStatus() {
+    const rows = (_intelData?.statusBreakdown || []);
+    if (!rows.length) return;
+    downloadCsv([['Status Code','Hits']].concat(rows.map(r => [r.status_code, r.hits])),
+      _intelClientSlug() + '-crawl-health-' + activeDays + 'd.csv');
+  }
+  function exportIntelContentAge() {
+    const pages = _intelData?.mostCrawled || [];
+    if (!pages.length) return;
+    const buckets = _buildAgeBuckets(pages);
+    downloadCsv([['Year / Category','Pages','% of Total']].concat(
+      Object.entries(buckets).map(([y, {count, urls}]) => [y, count, Math.round(count / pages.length * 100) + '%'])
+    ), _intelClientSlug() + '-content-age-' + activeDays + 'd.csv');
   }
 
   function renderIntelKpis(data) {
@@ -2148,6 +2230,68 @@ function openManageClients() {
         <div style="display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0">${bots}</div>
       </div>`;
     }).join('');
+  }
+
+  function _buildAgeBuckets(pages) {
+    const currentYear = new Date().getFullYear();
+    const buckets = {};
+    const yearRe = /\/(20\d\d)\//;
+    pages.forEach(p => {
+      const m = p.url.match(yearRe);
+      const yr = m ? parseInt(m[1]) : null;
+      let key;
+      if (!yr || yr > currentYear) key = 'Undated / No Year in URL';
+      else if (yr === currentYear) key = String(currentYear) + ' (this year)';
+      else if (yr === currentYear - 1) key = String(currentYear - 1);
+      else if (yr === currentYear - 2) key = String(currentYear - 2);
+      else if (yr === currentYear - 3) key = String(currentYear - 3);
+      else key = String(currentYear - 3 - 1) + ' & older';
+      if (!buckets[key]) buckets[key] = { count: 0, hits: 0, urls: [] };
+      buckets[key].count++;
+      buckets[key].hits += parseInt(p.hits) || 0;
+      buckets[key].urls.push(p.url);
+    });
+    return buckets;
+  }
+
+  function renderIntelContentAge(pages) {
+    const el = document.getElementById('intel-content-age');
+    if (!pages.length) {
+      el.innerHTML = `<div class="intel-empty-state">
+        <div class="intel-empty-icon" style="background:#7c3aed15"><svg viewBox="0 0 24 24" fill="#7c3aed"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L11 13V7h1.5v5.25l4.5 2.67-.77 1.33z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">No page data yet</div>
+        <div style="font-size:12px;color:var(--muted)">Content age chart will appear once bots start crawling</div>
+      </div>`;
+      return;
+    }
+    const buckets = _buildAgeBuckets(pages);
+    const total = pages.length;
+    const yearColors = ['#7c3aed','#6b4fbb','#8b5cf6','#a78bfa','#c4b5fd','#94a3b8'];
+    const entries = Object.entries(buckets).sort((a, b) => {
+      const yearA = parseInt(a[0]) || 0;
+      const yearB = parseInt(b[0]) || 0;
+      return yearB - yearA;
+    });
+    const maxCount = Math.max(...entries.map(([,v]) => v.count));
+    const bars = entries.map(([label, val], i) => {
+      const pct = Math.max(5, Math.round((val.count / maxCount) * 100));
+      const displayPct = Math.round((val.count / total) * 100);
+      const col = yearColors[Math.min(i, yearColors.length - 1)];
+      return `<div class="intel-age-bar-row">
+        <div class="intel-age-label" style="color:${col}">${escHtml(label)}</div>
+        <div class="intel-age-track">
+          <div class="intel-age-fill" style="width:${pct}%;background:${col}">
+            ${pct >= 20 ? `<span class="intel-age-pct">${displayPct}%</span>` : ''}
+          </div>
+        </div>
+        <div class="intel-age-count">${val.count} page${val.count !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('');
+    const undated = buckets['Undated / No Year in URL'];
+    const note = undated && undated.count > 0
+      ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">${undated.count} page${undated.count!==1?'s':''} have no year in their URL — these may be homepages, service pages, or use non-dated URL structures.</div>`
+      : '';
+    el.innerHTML = bars + note;
   }
 
   function renderIntelStatus(rows) {
