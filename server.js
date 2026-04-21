@@ -156,14 +156,41 @@ if (!defined('BF_BOT_TRACKER_LOADED')) {
   define('BF_TRACKER_API', '${appUrl}/api/hit');
   define('BF_CLIENT_KEY',  '${client.api_key}');
 
+  // Bot name => substring to match in User-Agent (case-insensitive)
   $AI_BOTS = [
-    'GPTBot'=>'GPTBot','ChatGPT-User'=>'ChatGPT-User','OAI-SearchBot'=>'OAI-SearchBot',
-    'ClaudeBot'=>'ClaudeBot','Claude-Web'=>'Claude-Web','Anthropic'=>'anthropic-ai',
-    'Google-Extended'=>'Google-Extended','Gemini'=>'Gemini','PerplexityBot'=>'PerplexityBot',
-    'Bytespider'=>'Bytespider','CCBot'=>'CCBot','Meta-ExternalAgent'=>'Meta-ExternalAgent',
-    'FacebookBot'=>'FacebookBot','Cohere'=>'cohere-ai','YouBot'=>'YouBot',
-    'Diffbot'=>'Diffbot','Applebot-Extended'=>'Applebot-Extended',
-    'Amazonbot'=>'Amazonbot','DuckAssistBot'=>'DuckAssistBot',
+    // OpenAI
+    'GPTBot'             => 'GPTBot',
+    'ChatGPT-User'       => 'ChatGPT-User',
+    'OAI-SearchBot'      => 'OAI-SearchBot',
+    // Anthropic / Claude
+    'ClaudeBot'          => 'ClaudeBot',
+    'Claude-Web'         => 'Claude-Web',
+    'anthropic-ai'       => 'anthropic-ai',
+    // Google AI (Gemini, AI Overviews)
+    'Google-Extended'    => 'Google-Extended',
+    'Googlebot'          => 'Googlebot',
+    // Perplexity
+    'PerplexityBot'      => 'PerplexityBot',
+    'Perplexity-User'    => 'Perplexity-User',
+    // Microsoft Copilot / Bing
+    'bingbot'            => 'bingbot',
+    'CopilotBot'         => 'CopilotBot',
+    // Apple Intelligence
+    'Applebot-Extended'  => 'Applebot-Extended',
+    'Applebot'           => 'Applebot',
+    // Meta AI
+    'Meta-ExternalAgent' => 'Meta-ExternalAgent',
+    'FacebookBot'        => 'FacebookBot',
+    // Others
+    'Bytespider'         => 'Bytespider',
+    'CCBot'              => 'CCBot',
+    'cohere-ai'          => 'cohere-ai',
+    'YouBot'             => 'YouBot',
+    'Diffbot'            => 'Diffbot',
+    'Amazonbot'          => 'Amazonbot',
+    'DuckAssistBot'      => 'DuckAssistBot',
+    'AI2Bot'             => 'AI2Bot',
+    'Timpibot'           => 'Timpibot',
   ];
 
   $ua  = $_SERVER['HTTP_USER_AGENT'] ?? '';
@@ -173,8 +200,10 @@ if (!defined('BF_BOT_TRACKER_LOADED')) {
   }
 
   if ($bot) {
+    $api_url = BF_TRACKER_API;
+    $api_key = BF_CLIENT_KEY;
     $payload = json_encode([
-      'api_key'     => BF_CLIENT_KEY,
+      'api_key'     => $api_key,
       'url'         => $_SERVER['REQUEST_URI'] ?? '/',
       'bot_name'    => $bot,
       'user_agent'  => $ua,
@@ -183,28 +212,32 @@ if (!defined('BF_BOT_TRACKER_LOADED')) {
       'referrer'    => $_SERVER['HTTP_REFERER']      ?? null,
     ]);
 
-    if (function_exists('curl_init')) {
-      $ch = curl_init(BF_TRACKER_API);
-      curl_setopt_array($ch, [
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 3,
-        CURLOPT_CONNECTTIMEOUT => 2,
-        CURLOPT_SSL_VERIFYPEER => false,
-      ]);
-      @curl_exec($ch);
-      curl_close($ch);
-    } elseif (ini_get('allow_url_fopen')) {
-      $ctx = stream_context_create(['http' => [
-        'method'  => 'POST',
-        'header'  => "Content-Type: application/json\r\nContent-Length: " . strlen($payload),
-        'content' => $payload,
-        'timeout' => 2,
-      ]]);
-      @file_get_contents(BF_TRACKER_API, false, $ctx);
-    }
+    // Fire AFTER the page has been sent to the bot so tracking never slows the response
+    register_shutdown_function(function() use ($api_url, $payload) {
+      if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+      if (function_exists('curl_init')) {
+        $ch = curl_init($api_url);
+        curl_setopt_array($ch, [
+          CURLOPT_POST           => true,
+          CURLOPT_POSTFIELDS     => $payload,
+          CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_TIMEOUT        => 5,
+          CURLOPT_CONNECTTIMEOUT => 3,
+          CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        @curl_exec($ch);
+        curl_close($ch);
+      } elseif (ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create(['http' => [
+          'method'  => 'POST',
+          'header'  => "Content-Type: application/json\r\nContent-Length: " . strlen($payload),
+          'content' => $payload,
+          'timeout' => 4,
+        ]]);
+        @file_get_contents($api_url, false, $ctx);
+      }
+    });
   }
 }
 `;
@@ -344,10 +377,23 @@ const API_URL = '${appUrl}/api/hit';
 const CLIENT_API_KEY = '${client.api_key}';
 
 const AI_BOTS = [
-  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-Web',
-  'anthropic-ai', 'Google-Extended', 'Gemini', 'PerplexityBot', 'Bytespider',
-  'CCBot', 'Meta-ExternalAgent', 'FacebookBot', 'cohere-ai', 'YouBot',
-  'Diffbot', 'Applebot-Extended', 'Amazonbot', 'DuckAssistBot'
+  // OpenAI
+  'GPTBot', 'ChatGPT-User', 'OAI-SearchBot',
+  // Anthropic / Claude
+  'ClaudeBot', 'Claude-Web', 'anthropic-ai',
+  // Google AI (Gemini, AI Overviews)
+  'Google-Extended', 'Googlebot',
+  // Perplexity
+  'PerplexityBot', 'Perplexity-User',
+  // Microsoft Copilot / Bing
+  'bingbot', 'CopilotBot',
+  // Apple Intelligence
+  'Applebot-Extended', 'Applebot',
+  // Meta AI
+  'Meta-ExternalAgent', 'FacebookBot',
+  // Others
+  'Bytespider', 'CCBot', 'cohere-ai', 'YouBot', 'Diffbot',
+  'Amazonbot', 'DuckAssistBot', 'AI2Bot', 'Timpibot',
 ];
 
 export default {

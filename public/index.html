@@ -968,19 +968,39 @@
 
   // ── BOT COLOR PALETTE ──
   const BOT_COLORS = {
-    'GPTBot':             '#10b981',
-    'ChatGPT-User':       '#059669',
-    'ClaudeBot':          '#8b5cf6',
-    'Anthropic':          '#7c3aed',
-    'Google-Extended':    '#ef4444',
-    'PerplexityBot':      '#3b82f6',
-    'Bytespider':         '#f59e0b',
-    'CCBot':              '#ec4899',
-    'Meta-ExternalAgent': '#f97316',
-    'Cohere':             '#14b8a6',
-    'YouBot':             '#6366f1',
-    'Diffbot':            '#84cc16',
-    'Applebot-Extended':  '#94a3b8',
+    // OpenAI
+    'GPTBot':              '#10b981',
+    'ChatGPT-User':        '#059669',
+    'OAI-SearchBot':       '#34d399',
+    // Anthropic / Claude
+    'ClaudeBot':           '#8b5cf6',
+    'Claude-Web':          '#7c3aed',
+    'anthropic-ai':        '#6d28d9',
+    // Google AI
+    'Google-Extended':     '#ef4444',
+    'Googlebot':           '#ea580c',
+    // Perplexity
+    'PerplexityBot':       '#3b82f6',
+    'Perplexity-User':     '#2563eb',
+    // Microsoft Copilot / Bing
+    'bingbot':             '#0ea5e9',
+    'CopilotBot':          '#0284c7',
+    // Meta AI
+    'Meta-ExternalAgent':  '#f97316',
+    'FacebookBot':         '#fb923c',
+    // Apple
+    'Applebot-Extended':   '#94a3b8',
+    'Applebot':            '#64748b',
+    // Others
+    'Bytespider':          '#f59e0b',
+    'CCBot':               '#ec4899',
+    'cohere-ai':           '#14b8a6',
+    'YouBot':              '#6366f1',
+    'Diffbot':             '#84cc16',
+    'Amazonbot':           '#f59e0b',
+    'DuckAssistBot':       '#facc15',
+    'AI2Bot':              '#a855f7',
+    'Timpibot':            '#06b6d4',
   };
   function botColor(name) {
     if (BOT_COLORS[name]) return BOT_COLORS[name];
@@ -991,7 +1011,7 @@
   }
 
   const REALTIME_BOTS = new Set([
-    'ChatGPT-User', 'OAI-SearchBot', 'PerplexityBot', 'Claude-Web'
+    'ChatGPT-User', 'OAI-SearchBot', 'Claude-Web', 'Perplexity-User', 'CopilotBot'
   ]);
   function botType(name) {
     return REALTIME_BOTS.has(name) ? 'realtime' : 'indexing';
