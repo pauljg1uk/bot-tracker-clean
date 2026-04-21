@@ -138,20 +138,39 @@
     .sc-intel:hover { border-color:#e57c23; }
     .sc-icon-intel { background:#fff5ec; }
     .sc-icon-intel svg { fill:#e57c23; }
-    .intel-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+    .intel-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+    .intel-kpi { border-radius:14px; padding:16px 18px; border:1.5px solid; }
+    .intel-kpi-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+    .intel-kpi-icon svg { width:18px; height:18px; }
+    .intel-kpi-val { font-size:28px; font-weight:800; line-height:1; margin-bottom:4px; }
+    .intel-kpi-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted2); }
+    .intel-kpi-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+    .intel-section-panel { border-radius:14px; border:1.5px solid; overflow:hidden; margin-bottom:14px; }
+    .intel-panel-head { display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid; }
+    .intel-panel-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .intel-panel-icon svg { width:16px; height:16px; }
+    .intel-panel-title { font-size:14px; font-weight:700; line-height:1.2; }
+    .intel-panel-sub { font-size:11px; margin-top:3px; opacity:.75; }
+    .intel-panel-body { padding:14px 18px; }
+    .intel-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:0; }
+    .intel-section-grid .intel-section-panel { margin-bottom:0; }
+    .intel-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
     .intel-row:last-child { border-bottom:none; padding-bottom:0; }
     .intel-url { font-family:monospace; font-size:12px; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-    .intel-bar-wrap { width:110px; flex-shrink:0; }
-    .intel-bar-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
-    .intel-bar-fill  { height:100%; border-radius:3px; transition:width .4s; }
-    .intel-hits { font-size:13px; font-weight:700; width:38px; text-align:right; flex-shrink:0; }
+    .intel-bar-wrap { width:90px; flex-shrink:0; }
+    .intel-bar-track { height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+    .intel-bar-fill { height:100%; border-radius:3px; transition:width .4s; }
+    .intel-hits { font-size:13px; font-weight:700; width:36px; text-align:right; flex-shrink:0; }
     .intel-bots { display:flex; gap:4px; flex-wrap:wrap; }
     .intel-diversity { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; flex-shrink:0; }
     .status-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
     .status-bar-label { width:130px; font-size:12px; font-weight:600; flex-shrink:0; }
-    .status-bar-track { flex:1; height:10px; background:var(--surface2); border-radius:5px; overflow:hidden; }
-    .status-bar-fill  { height:100%; border-radius:5px; }
+    .status-bar-track { flex:1; height:9px; background:var(--surface2); border-radius:5px; overflow:hidden; }
+    .status-bar-fill { height:100%; border-radius:5px; }
     .status-bar-count { font-size:12px; font-weight:700; width:45px; text-align:right; flex-shrink:0; }
+    .intel-empty-state { display:flex; flex-direction:column; align-items:center; padding:30px 16px; text-align:center; gap:6px; }
+    .intel-empty-icon { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
+    .intel-empty-icon svg { width:22px; height:22px; }
     .bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .bot-hits-cell { font-size: 13px; font-weight: 600; text-align: right; }
@@ -655,48 +674,120 @@
         </button>
         <div>
           <div class="pv-title">Page Intelligence</div>
-          <div class="pv-sub" id="intel-sub">How AI bots interact with your content</div>
+          <div class="pv-sub">How AI bots interact with your content</div>
         </div>
       </div>
 
-      <!-- A: Most Crawled -->
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Most Crawled Pages</span>
-          <span style="font-size:12px;color:var(--muted)">Prime AI citation candidates — bots keep returning here</span>
-        </div>
-        <div id="intel-most-crawled"><div class="empty">Loading…</div></div>
-      </div>
-
-      <!-- B: Real-time AI fetches -->
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">AI-Cited Pages</span>
-          <span style="font-size:12px;color:var(--muted)">Fetched in real time — a human's query triggered this visit</span>
-        </div>
-        <div id="intel-realtime"><div class="empty">Loading…</div></div>
-      </div>
-
-      <div class="two-col">
-        <!-- C: Cold pages -->
-        <div class="panel" style="margin-bottom:0">
-          <div class="panel-header">
-            <span class="panel-title">Cold Pages</span>
-            <span style="font-size:12px;color:var(--muted)">No AI crawl in 14+ days — possible discoverability gap</span>
+      <!-- KPI Strip -->
+      <div class="intel-kpi-grid">
+        <div class="intel-kpi" style="border-color:#4a7d6340;background:#4a7d6306">
+          <div class="intel-kpi-icon" style="background:#4a7d6318">
+            <svg viewBox="0 0 24 24" fill="#4a7d63"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
           </div>
-          <div id="intel-cold"><div class="empty">Loading…</div></div>
+          <div class="intel-kpi-val" id="ikpi-crawled" style="color:#4a7d63">—</div>
+          <div class="intel-kpi-lbl">Pages Crawled</div>
+          <div class="intel-kpi-sub">unique URLs this period</div>
         </div>
-
-        <!-- D: Crawl health -->
-        <div class="panel" style="margin-bottom:0">
-          <div class="panel-header">
-            <span class="panel-title">Crawl Health</span>
-            <span style="font-size:12px;color:var(--muted)">Response codes AI bots received</span>
+        <div class="intel-kpi" style="border-color:#0ea5e940;background:#0ea5e906">
+          <div class="intel-kpi-icon" style="background:#0ea5e918">
+            <svg viewBox="0 0 24 24" fill="#0ea5e9"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
           </div>
-          <div id="intel-status"><div class="empty">Loading…</div></div>
+          <div class="intel-kpi-val" id="ikpi-cited" style="color:#0ea5e9">—</div>
+          <div class="intel-kpi-lbl">AI-Cited Pages</div>
+          <div class="intel-kpi-sub">real-time user retrieval</div>
+        </div>
+        <div class="intel-kpi" style="border-color:#f59e0b40;background:#f59e0b06">
+          <div class="intel-kpi-icon" style="background:#f59e0b18">
+            <svg viewBox="0 0 24 24" fill="#f59e0b"><path d="M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22v-2z"/></svg>
+          </div>
+          <div class="intel-kpi-val" id="ikpi-cold" style="color:#f59e0b">—</div>
+          <div class="intel-kpi-lbl">Cold Pages</div>
+          <div class="intel-kpi-sub">14+ days without crawl</div>
+        </div>
+        <div class="intel-kpi" style="border-color:#4a7d6340;background:#4a7d6306">
+          <div class="intel-kpi-icon" style="background:#4a7d6318">
+            <svg viewBox="0 0 24 24" fill="#4a7d63"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          </div>
+          <div class="intel-kpi-val" id="ikpi-health" style="color:#4a7d63">—</div>
+          <div class="intel-kpi-lbl">Crawl Health</div>
+          <div class="intel-kpi-sub">successful responses</div>
         </div>
       </div>
 
+      <!-- A: Most Crawled (full width, green) -->
+      <div class="intel-section-panel" style="border-color:#4a7d6330">
+        <div class="intel-panel-head" style="border-color:#4a7d6320;background:#4a7d6308">
+          <div class="intel-panel-icon" style="background:#4a7d6320">
+            <svg viewBox="0 0 24 24" fill="#4a7d63"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </div>
+          <div>
+            <div class="intel-panel-title" style="color:#2d5a42">Most Crawled Pages</div>
+            <div class="intel-panel-sub" style="color:#2d5a42">Prime AI citation candidates — bots keep returning to these pages</div>
+          </div>
+        </div>
+        <div class="intel-panel-body" id="intel-most-crawled"><div class="empty">Loading…</div></div>
+      </div>
+
+      <!-- 2x2 grid -->
+      <div class="intel-section-grid">
+
+        <!-- B: AI-Cited (blue) -->
+        <div class="intel-section-panel" style="border-color:#0ea5e930">
+          <div class="intel-panel-head" style="border-color:#0ea5e920;background:#0ea5e908">
+            <div class="intel-panel-icon" style="background:#0ea5e920">
+              <svg viewBox="0 0 24 24" fill="#0284c7"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div>
+              <div class="intel-panel-title" style="color:#0369a1">Pages Humans Visit After AI Referrals</div>
+              <div class="intel-panel-sub" style="color:#0369a1">Real ROI — a live user's query triggered these fetches</div>
+            </div>
+          </div>
+          <div class="intel-panel-body" id="intel-realtime"><div class="empty">Loading…</div></div>
+        </div>
+
+        <!-- C: Cold / Weak Pages (amber) -->
+        <div class="intel-section-panel" style="border-color:#f59e0b30">
+          <div class="intel-panel-head" style="border-color:#f59e0b20;background:#f59e0b08">
+            <div class="intel-panel-icon" style="background:#f59e0b20">
+              <svg viewBox="0 0 24 24" fill="#b45309"><path d="M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22v-2z"/></svg>
+            </div>
+            <div>
+              <div class="intel-panel-title" style="color:#92400e">Weak / Cold Pages</div>
+              <div class="intel-panel-sub" style="color:#92400e">Likely weak internal linking or poor discoverability</div>
+            </div>
+          </div>
+          <div class="intel-panel-body" id="intel-cold"><div class="empty">Loading…</div></div>
+        </div>
+
+        <!-- D: Schema-Rich / Bot Diversity (purple) -->
+        <div class="intel-section-panel" style="border-color:#6b4fbb30">
+          <div class="intel-panel-head" style="border-color:#6b4fbb20;background:#6b4fbb08">
+            <div class="intel-panel-icon" style="background:#6b4fbb20">
+              <svg viewBox="0 0 24 24" fill="#6b4fbb"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            </div>
+            <div>
+              <div class="intel-panel-title" style="color:#4c1d95">Schema-Rich Pages</div>
+              <div class="intel-panel-sub" style="color:#4c1d95">Pages attracting multiple unique AI crawlers — validates structured data</div>
+            </div>
+          </div>
+          <div class="intel-panel-body" id="intel-diversity"><div class="empty">Loading…</div></div>
+        </div>
+
+        <!-- E: Crawl Health (slate) -->
+        <div class="intel-section-panel" style="border-color:#64748b30">
+          <div class="intel-panel-head" style="border-color:#64748b20;background:#64748b08">
+            <div class="intel-panel-icon" style="background:#64748b20">
+              <svg viewBox="0 0 24 24" fill="#475569"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            </div>
+            <div>
+              <div class="intel-panel-title" style="color:#334155">Crawl Health</div>
+              <div class="intel-panel-sub" style="color:#334155">Response codes received by AI bots</div>
+            </div>
+          </div>
+          <div class="intel-panel-body" id="intel-status"><div class="empty">Loading…</div></div>
+        </div>
+
+      </div><!-- /intel-section-grid -->
     </div><!-- /intel-view -->
 
     <!-- PAGE DETAIL PANEL -->
@@ -1915,32 +2006,55 @@ function openManageClients() {
   }
   function loadIntelData() {
     const clientId = document.getElementById('client-select').value;
-    ['intel-most-crawled','intel-realtime','intel-cold','intel-status'].forEach(id => {
+    ['intel-most-crawled','intel-realtime','intel-cold','intel-status','intel-diversity'].forEach(id => {
       document.getElementById(id).innerHTML = '<div class="empty">Loading…</div>';
     });
     fetch('/api/clients/' + clientId + '/page-intel?days=' + activeDays, { headers: authHeaders() })
       .then(r => r.json())
       .then(data => {
+        renderIntelKpis(data);
         renderIntelMostCrawled(data.mostCrawled || []);
         renderIntelRealtime(data.realtimePages || []);
         renderIntelCold(data.coldPages || []);
+        renderIntelDiversity(data.mostCrawled || []);
         renderIntelStatus(data.statusBreakdown || []);
       })
       .catch(() => {
-        ['intel-most-crawled','intel-realtime','intel-cold','intel-status'].forEach(id => {
+        ['intel-most-crawled','intel-realtime','intel-cold','intel-status','intel-diversity'].forEach(id => {
           document.getElementById(id).innerHTML = '<div class="empty">Error loading data</div>';
         });
       });
   }
 
+  function renderIntelKpis(data) {
+    const crawled = (data.mostCrawled || []).length;
+    const citedUrls = new Set((data.realtimePages || []).map(r => r.url));
+    const cold = (data.coldPages || []).length;
+    const status = data.statusBreakdown || [];
+    const total = status.reduce((s, r) => s + r.hits, 0);
+    const ok = status.filter(r => r.status_code >= 200 && r.status_code < 300).reduce((s, r) => s + r.hits, 0);
+    const health = total > 0 ? Math.round((ok / total) * 100) + '%' : '—';
+    document.getElementById('ikpi-crawled').textContent = crawled || '—';
+    document.getElementById('ikpi-cited').textContent = citedUrls.size || '—';
+    document.getElementById('ikpi-cold').textContent = cold || (crawled ? '0' : '—');
+    document.getElementById('ikpi-health').textContent = health;
+  }
+
   function renderIntelMostCrawled(pages) {
     const el = document.getElementById('intel-most-crawled');
-    if (!pages.length) { el.innerHTML = '<div class="empty">No page data yet</div>'; return; }
+    if (!pages.length) {
+      el.innerHTML = `<div class="intel-empty-state">
+        <div class="intel-empty-icon" style="background:#4a7d6315"><svg viewBox="0 0 24 24" fill="#4a7d63"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">No crawl data yet</div>
+        <div style="font-size:12px;color:var(--muted)">Install the tracker and bots will appear here</div>
+      </div>`;
+      return;
+    }
     const maxHits = pages[0].hits || 1;
     el.innerHTML = pages.map((p, i) => {
       const pct = Math.max(3, Math.round((p.hits / maxHits) * 100));
       const d = p.unique_bots || 1;
-      const dc = d >= 3 ? '#e57c23' : d >= 2 ? '#6b4fbb' : 'var(--muted2)';
+      const dc = d >= 3 ? '#e57c23' : d >= 2 ? '#6b4fbb' : '#94a3b8';
       const bots = (p.bot_names || []).map(b => {
         const c = botColor(b);
         return `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${c}18;color:${c};border:1px solid ${c}30">${escHtml(b.replace('Bot','').replace('-Extended','').replace('-User',''))}</span>`;
@@ -1949,10 +2063,10 @@ function openManageClients() {
         <span style="font-size:11px;font-weight:700;color:var(--muted2);width:18px;flex-shrink:0">${i+1}</span>
         <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
         <div class="intel-bar-wrap">
-          <div class="intel-bar-track"><div class="intel-bar-fill" style="width:${pct}%;background:var(--green)"></div></div>
+          <div class="intel-bar-track"><div class="intel-bar-fill" style="width:${pct}%;background:#4a7d63"></div></div>
         </div>
         <div class="intel-hits">${Number(p.hits).toLocaleString()}</div>
-        <span class="intel-diversity" style="background:${dc}18;color:${dc};border:1px solid ${dc}30">${d} bot${d > 1 ? 's' : ''}</span>
+        <span class="intel-diversity" style="background:${dc}18;color:${dc};border:1px solid ${dc}30">${d} bot${d>1?'s':''}</span>
         <div class="intel-bots">${bots}</div>
       </div>`;
     }).join('');
@@ -1961,7 +2075,11 @@ function openManageClients() {
   function renderIntelRealtime(rows) {
     const el = document.getElementById('intel-realtime');
     if (!rows.length) {
-      el.innerHTML = '<div class="empty">No real-time AI retrievals recorded yet.<br><span style="font-size:12px;color:var(--muted)">These appear when ChatGPT-User, PerplexityBot or OAI-SearchBot visit — meaning a live user triggered the fetch.</span></div>';
+      el.innerHTML = `<div class="intel-empty-state">
+        <div class="intel-empty-icon" style="background:#0ea5e915"><svg viewBox="0 0 24 24" fill="#0ea5e9"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">No real-time retrievals yet</div>
+        <div style="font-size:12px;color:var(--muted)">Appears when ChatGPT-User or PerplexityBot visit — meaning a live user triggered the fetch</div>
+      </div>`;
       return;
     }
     const byUrl = {};
@@ -1972,12 +2090,10 @@ function openManageClients() {
       if (r.last_seen > byUrl[r.url].last_seen) byUrl[r.url].last_seen = r.last_seen;
     });
     const sorted = Object.values(byUrl).sort((a, b) => b.total - a.total);
-    el.innerHTML = `<div style="background:#0ea5e910;border:1px solid #0ea5e930;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#0369a1">
-      A real user was using an AI tool when it fetched these pages — not a background crawl. This is your most direct signal of AI-driven referral traffic.
-    </div>` + sorted.map(p => {
+    el.innerHTML = sorted.map(p => {
       const pills = p.bots.map(b => {
         const c = botColor(b.bot);
-        return `<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${c}18;color:${c};border:1px solid ${c}30">${escHtml(b.bot)} ×${b.hits}</span>`;
+        return `<span style="font-size:10px;padding:2px 7px;border-radius:12px;background:${c}18;color:${c};border:1px solid ${c}30">${escHtml(b.bot.replace('-User',''))} ×${b.hits}</span>`;
       }).join(' ');
       return `<div class="intel-row">
         <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
@@ -1990,7 +2106,11 @@ function openManageClients() {
   function renderIntelCold(pages) {
     const el = document.getElementById('intel-cold');
     if (!pages.length) {
-      el.innerHTML = '<div class="empty" style="color:var(--green)">All crawled pages are still being visited regularly.</div>';
+      el.innerHTML = `<div class="intel-empty-state">
+        <div class="intel-empty-icon" style="background:#4a7d6315"><svg viewBox="0 0 24 24" fill="#4a7d63"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:var(--green)">All pages crawled recently</div>
+        <div style="font-size:12px;color:var(--muted)">No discoverability gaps detected this period</div>
+      </div>`;
       return;
     }
     el.innerHTML = pages.map(p => {
@@ -1998,15 +2118,47 @@ function openManageClients() {
       const date = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' });
       return `<div class="intel-row">
         <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
-        <span style="font-size:11px;color:var(--muted);flex-shrink:0">${p.total_hits} hit${p.total_hits > 1?'s':''}</span>
-        <span style="font-size:11px;color:#f59e0b;font-weight:600;flex-shrink:0;white-space:nowrap">Last: ${date}</span>
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">${p.total_hits} hit${p.total_hits>1?'s':''}</span>
+        <span style="font-size:11px;color:#b45309;font-weight:600;flex-shrink:0;white-space:nowrap">Last: ${date}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderIntelDiversity(pages) {
+    const el = document.getElementById('intel-diversity');
+    const rich = pages.filter(p => p.unique_bots >= 2).sort((a, b) => b.unique_bots - a.unique_bots);
+    if (!rich.length) {
+      el.innerHTML = `<div class="intel-empty-state">
+        <div class="intel-empty-icon" style="background:#6b4fbb15"><svg viewBox="0 0 24 24" fill="#6b4fbb"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">No multi-bot pages yet</div>
+        <div style="font-size:12px;color:var(--muted)">Pages attracting 2+ unique AI crawlers will appear here — a strong schema signal</div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = rich.map(p => {
+      const score = p.unique_bots;
+      const scoreColor = score >= 4 ? '#e57c23' : score >= 3 ? '#6b4fbb' : '#0ea5e9';
+      const bots = (p.bot_names || []).map(b => {
+        const c = botColor(b);
+        return `<span style="font-size:10px;padding:1px 5px;border-radius:8px;background:${c}18;color:${c};border:1px solid ${c}30">${escHtml(b.replace('Bot','').replace('-Extended','').replace('-User',''))}</span>`;
+      }).join(' ');
+      return `<div class="intel-row">
+        <span class="intel-diversity" style="background:${scoreColor}18;color:${scoreColor};border:1px solid ${scoreColor}30;flex-shrink:0">${score} bots</span>
+        <div class="intel-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0">${bots}</div>
       </div>`;
     }).join('');
   }
 
   function renderIntelStatus(rows) {
     const el = document.getElementById('intel-status');
-    if (!rows.length) { el.innerHTML = '<div class="empty">No status data</div>'; return; }
+    if (!rows.length) {
+      el.innerHTML = `<div class="intel-empty-state">
+        <div class="intel-empty-icon" style="background:#64748b15"><svg viewBox="0 0 24 24" fill="#64748b"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">No status data yet</div>
+      </div>`;
+      return;
+    }
     const groups = { '2xx OK': 0, '3xx Redirect': 0, '4xx Error': 0, '5xx Server Error': 0 };
     rows.forEach(r => {
       const c = r.status_code;
@@ -2017,22 +2169,19 @@ function openManageClients() {
     });
     const total = Object.values(groups).reduce((a, b) => a + b, 0) || 1;
     const colors = { '2xx OK':'#4a7d63', '3xx Redirect':'#f59e0b', '4xx Error':'#f97316', '5xx Server Error':'#ef4444' };
-    const bars = Object.entries(groups)
-      .filter(([, h]) => h > 0)
-      .sort(([, a], [, b]) => b - a)
-      .map(([label, hits]) => {
-        const pct = Math.max(2, Math.round((hits / total) * 100));
-        const c = colors[label];
-        return `<div class="status-bar-row">
-          <div class="status-bar-label" style="color:${c}">${label}</div>
-          <div class="status-bar-track"><div class="status-bar-fill" style="width:${pct}%;background:${c}"></div></div>
-          <div class="status-bar-count">${hits.toLocaleString()}</div>
-        </div>`;
-      }).join('');
+    const bars = Object.entries(groups).filter(([,h]) => h > 0).sort(([,a],[,b]) => b-a).map(([label, hits]) => {
+      const pct = Math.max(2, Math.round((hits / total) * 100));
+      const c = colors[label];
+      return `<div class="status-bar-row">
+        <div class="status-bar-label" style="color:${c}">${label}</div>
+        <div class="status-bar-track"><div class="status-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+        <div class="status-bar-count">${hits.toLocaleString()}</div>
+      </div>`;
+    }).join('');
     const errNote = groups['4xx Error'] > 0
-      ? `<span style="color:#f97316;font-weight:600">${groups['4xx Error'].toLocaleString()} 4xx errors</span> — AI bots wasted crawl budget on broken or missing pages.`
-      : '<span style="color:var(--green);font-weight:600">No 4xx errors</span> — all crawled pages served correctly.';
-    el.innerHTML = bars + `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">${errNote}</div>`;
+      ? `<span style="color:#f97316;font-weight:600">${groups['4xx Error'].toLocaleString()} 4xx errors</span> — bots wasted crawl budget on broken pages.`
+      : '<span style="color:var(--green);font-weight:600">No 4xx errors</span> — all pages served correctly.';
+    el.innerHTML = bars + `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">${errNote}</div>`;
   }
 
   function copyApiKey() {
