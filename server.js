@@ -129,7 +129,7 @@ app.get('/api/clients/:clientId/php-script', auth, async (req, res) => {
     const appUrl = 'https://aicrawler.befoundsearch.com';
     const phpScript = `<?php
 /**
- * BeFound AI Tracker v1.3
+ * BeFound AI Tracker v1.4
  * Client : ${client.name} (${client.domain})
  * =====================================================================
  *
@@ -188,7 +188,7 @@ define('DONOTMINIFY',       true);
 if (isset($_GET['bf_verify']) && $_GET['bf_verify'] === BF_VERIFY_TOKEN) {
   @header('Content-Type: application/json');
   @header('Cache-Control: no-store');
-  echo json_encode(['status' => 'active', 'client' => '${client.name}', 'v' => '1.3']);
+  echo json_encode(['status' => 'active', 'client' => '${client.name}', 'v' => '1.4']);
   exit;
 }
 
@@ -214,9 +214,18 @@ $BF_BOTS = [
   // Apple Intelligence
   'Applebot-Extended'  => 'Applebot-Extended',
   'Applebot'           => 'Applebot',
+  // xAI / Grok
+  'Grok'               => 'Grok',
+  'xAI'                => 'xAI',
   // Meta AI
   'Meta-ExternalAgent' => 'Meta-ExternalAgent',
   'FacebookBot'        => 'FacebookBot',
+  // DuckDuckGo AI
+  'DuckAssistBot'      => 'DuckAssistBot',
+  // Mistral AI
+  'MistralBot'         => 'MistralBot',
+  // Brave AI
+  'BraveBot'           => 'BraveBot',
   // Others
   'Bytespider'         => 'Bytespider',
   'CCBot'              => 'CCBot',
@@ -224,7 +233,6 @@ $BF_BOTS = [
   'YouBot'             => 'YouBot',
   'Diffbot'            => 'Diffbot',
   'Amazonbot'          => 'Amazonbot',
-  'DuckAssistBot'      => 'DuckAssistBot',
   'AI2Bot'             => 'AI2Bot',
   'Timpibot'           => 'Timpibot',
 ];
