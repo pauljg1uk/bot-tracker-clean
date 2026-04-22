@@ -574,10 +574,14 @@ app.get('/api/stats/:clientId', auth, async (req, res) => {
         MAX(timestamp) as last_active
         FROM bot_hits b WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days'
         GROUP BY bot_name ORDER BY hits DESC`, [clientId]),
-      pool.query(`SELECT url, COUNT(*) as hits,
+      pool.query(`SELECT url, SUM(bot_count) as hits,
         (SELECT COUNT(*) FROM bot_hits b2 WHERE b2.client_id=$1 AND b2.url=b.url AND b2.timestamp BETWEEN NOW() - INTERVAL '${days*2} days' AND NOW() - INTERVAL '${days} days') as previous_hits,
-        json_agg(DISTINCT jsonb_build_object('bot_name', bot_name, 'hits', bot_count)) as bots
-        FROM (SELECT url, bot_name, COUNT(*) as bot_count FROM bot_hits WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days' GROUP BY url, bot_name) b
+        json_agg(DISTINCT jsonb_build_object('bot_name', bot_name, 'hits', bot_count)) as bots,
+        MAX(last_seen) as last_seen,
+        ROUND(100.0 * SUM(ok_count) / NULLIF(SUM(bot_count), 0)) as status_ok_pct
+        FROM (SELECT url, bot_name, COUNT(*) as bot_count, MAX(timestamp) as last_seen,
+          SUM(CASE WHEN status_code = 200 OR status_code IS NULL THEN 1 ELSE 0 END) as ok_count
+          FROM bot_hits WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days' GROUP BY url, bot_name) b
         GROUP BY url ORDER BY hits DESC LIMIT 20`, [clientId]),
       pool.query(`SELECT DATE(timestamp) as date, COUNT(*) as hits FROM bot_hits WHERE client_id=$1 AND timestamp > NOW() - INTERVAL '${days} days' GROUP BY DATE(timestamp) ORDER BY date ASC`, [clientId])
     ]);
@@ -585,7 +589,7 @@ app.get('/api/stats/:clientId', auth, async (req, res) => {
       total: parseInt(totalHits.rows[0].total),
       previousTotal: parseInt(prevTotal.rows[0].total),
       byBot: byBot.rows.map(b => ({ ...b, hits: parseInt(b.hits), previous_hits: parseInt(b.previous_hits) })),
-      topPages: topPages.rows.map(p => ({ ...p, hits: parseInt(p.hits), previous_hits: parseInt(p.previous_hits) })),
+      topPages: topPages.rows.map(p => ({ ...p, hits: parseInt(p.hits), previous_hits: parseInt(p.previous_hits), status_ok_pct: p.status_ok_pct != null ? parseInt(p.status_ok_pct) : 90 })),
       overTime: overTime.rows
     });
   } catch (err) {

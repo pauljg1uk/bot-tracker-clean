@@ -203,11 +203,25 @@
     .trend-badge.neutral { color: var(--muted); background: var(--surface2); }
 
     /* ── PAGES ── */
-    .page-row { display: grid; grid-template-columns: 1fr 80px 120px 70px; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .page-row { display: grid; grid-template-columns: 1fr 78px 46px 70px 90px; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .page-row:last-child { border: none; }
     .page-url { font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; color: var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .page-bots { display: flex; gap: 4px; flex-wrap: wrap; }
     .mini-badge { font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 10px; white-space: nowrap; }
+    .trust-score-pill { display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:900;border-radius:9px;padding:3px 10px;letter-spacing:-0.02em;line-height:1.2; }
+    .trust-score-pill.high  { background:#dcf0e6;color:#166534; }
+    .trust-score-pill.mid   { background:#fef3c7;color:#92400e; }
+    .trust-score-pill.low   { background:#fee2e2;color:#991b1b; }
+    .trust-status { font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;white-space:nowrap; }
+    .trust-status.high { background:#dcf0e6;color:#166534; }
+    .trust-status.mid  { background:#fef3c7;color:#92400e; }
+    .trust-status.low  { background:#fee2e2;color:#991b1b; }
+    .trust-kpi-row { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px; }
+    .trust-kpi-card { background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px; }
+    .trust-kpi-label { font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px; }
+    .trust-kpi-val { font-size:18px;font-weight:900;color:var(--text);letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .trust-kpi-sub { font-size:10px;color:var(--muted);margin-top:1px; }
+    .trust-subtitle { font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.5; }
 
     /* ── TABLE ── */
     .scroll-table { overflow-x: auto; }
@@ -505,7 +519,7 @@
         <div class="shortcut-card sc-pages" onclick="openPagesView()">
           <div>
             <div class="sc-pill sc-pill-green">Pages</div>
-            <div class="sc-title">Top Pages</div>
+            <div class="sc-title">AI Trusted Pages</div>
             <div class="sc-sub">Which pages AI bots crawl most, rank movements and per-page visit cadence</div>
           </div>
           <div class="sc-action" style="color:var(--green)">View pages →</div>
@@ -603,16 +617,35 @@
         <div class="panel" style="margin-bottom:0">
           <div class="panel-header">
             <div style="display:flex;align-items:center;gap:10px">
-              <span class="panel-title">Top Pages</span>
-              <span class="panel-pill" style="background:#ede9ff;color:#5b21b6">Most Crawled</span>
+              <span class="panel-title">AI Trusted Pages</span>
+              <span class="panel-pill" style="background:#dcf0e6;color:#166534">AI Trust Scores</span>
             </div>
             <button onclick="openPagesView()" style="background:none;border:none;font-size:12px;color:var(--green-text);font-weight:700;cursor:pointer;font-family:inherit;padding:0">View all →</button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 80px 120px 70px;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:2px">
+          <div class="trust-subtitle">These are the pages AI systems repeatedly revisit and appear to trust as useful source material.</div>
+          <div class="trust-kpi-row">
+            <div class="trust-kpi-card">
+              <div class="trust-kpi-label">Most Trusted Page</div>
+              <div class="trust-kpi-val" id="trust-top-url">—</div>
+              <div class="trust-kpi-sub" id="trust-top-score"></div>
+            </div>
+            <div class="trust-kpi-card">
+              <div class="trust-kpi-label">Avg Trust Score</div>
+              <div class="trust-kpi-val" id="trust-avg-score">—</div>
+              <div class="trust-kpi-sub" id="trust-avg-sub"></div>
+            </div>
+            <div class="trust-kpi-card">
+              <div class="trust-kpi-label">Pages Growing</div>
+              <div class="trust-kpi-val" id="trust-growing-count">—</div>
+              <div class="trust-kpi-sub" id="trust-growing-sub"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 78px 46px 70px 90px;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:2px">
             <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">URL</span>
-            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;text-align:right">Hits</span>
-            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Bots</span>
-            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Trend</span>
+            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Trust</span>
+            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em;text-align:center">Bots</span>
+            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Last Seen</span>
+            <span style="font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Status</span>
           </div>
           <div id="top-pages"></div>
         </div>
@@ -719,6 +752,7 @@
                 <th style="text-align:right">Hits</th>
                 <th>Bots</th>
                 <th style="width:80px">Trend</th>
+                <th style="width:76px">Trust</th>
               </tr>
             </thead>
             <tbody id="pv-table-body"></tbody>
@@ -1503,25 +1537,89 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
     }).join('');
   }
 
-  // ── PAGES ──
+  // ── AI TRUST SCORE HELPERS ──────────────────────────────────────
+  function calcTrustScore(p, maxHits, maxBots) {
+    const hitScore    = maxHits > 0 ? Math.min(p.hits / maxHits, 1) * 40 : 0;
+    const uniqueBots  = (p.bots || []).filter(b => b.hits > 0).length;
+    const botScore    = Math.min(uniqueBots / Math.max(maxBots, 4), 1) * 25;
+    const lastSeen    = p.last_seen ? new Date(p.last_seen) : null;
+    const daysSince   = lastSeen ? (Date.now() - lastSeen.getTime()) / 86400000 : 30;
+    const recency     = Math.max(0, 1 - daysSince / 30) * 15;
+    const statusScore = ((p.status_ok_pct != null ? p.status_ok_pct : 90) / 100) * 10;
+    const depth       = (p.url || '/').split('/').filter(s => s.trim()).length;
+    const depthBonus  = depth >= 1 ? 10 : 0;
+    return Math.min(100, Math.round(hitScore + botScore + recency + statusScore + depthBonus));
+  }
+
+  function trustClass(score) {
+    return score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low';
+  }
+
+  function trustLabel(score) {
+    return score >= 80 ? 'Strong Trust' : score >= 50 ? 'Growing' : 'Needs Work';
+  }
+
+  function relativeDate(ts) {
+    if (!ts) return '—';
+    const days = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7)  return days + 'd ago';
+    if (days < 30) return Math.floor(days / 7) + 'w ago';
+    return Math.floor(days / 30) + 'mo ago';
+  }
+
   function renderPages(topPages, total) {
     const el = document.getElementById('top-pages');
     if (!topPages || topPages.length === 0) {
       el.innerHTML = '<div class="empty">No page data yet</div>';
+      ['trust-top-url','trust-top-score','trust-avg-score','trust-avg-sub','trust-growing-count','trust-growing-sub']
+        .forEach(id => { const e = document.getElementById(id); if (e) e.textContent = id.endsWith('url') ? '—' : ''; });
       return;
     }
-    const maxHits = topPages[0]?.hits || 1;
-    el.innerHTML = topPages.slice(0, 8).map(p => {
-      const topBots = (p.bots || []).slice(0, 3);
-      const botBadges = topBots.map(b => {
-        const c = botColor(b.bot_name);
-        return `<span class="mini-badge" style="background:${c}18;color:${c};border:1px solid ${c}40">${escHtml(b.bot_name.replace('Bot','').replace('-Extended',''))}</span>`;
-      }).join('');
+
+    const maxHits = Math.max(...topPages.map(p => p.hits), 1);
+    const maxBots = Math.max(...topPages.map(p => (p.bots || []).length), 1);
+
+    const scored = topPages
+      .map(p => ({ ...p, _score: calcTrustScore(p, maxHits, maxBots) }))
+      .sort((a, b) => b._score - a._score);
+
+    // Update KPI cards
+    const top = scored[0];
+    const avgScore = Math.round(scored.reduce((s, p) => s + p._score, 0) / scored.length);
+    const growing  = scored.filter(p => p.previous_hits > 0 && p.hits > p.previous_hits * 1.1);
+    const topLabel = top.url === '/' ? 'Homepage' : ('/' + top.url.split('/').filter(Boolean)[0]);
+
+    const topUrlEl    = document.getElementById('trust-top-url');
+    const topScoreEl  = document.getElementById('trust-top-score');
+    const avgScoreEl  = document.getElementById('trust-avg-score');
+    const avgSubEl    = document.getElementById('trust-avg-sub');
+    const growingEl   = document.getElementById('trust-growing-count');
+    const growingSubEl= document.getElementById('trust-growing-sub');
+
+    if (topUrlEl)    topUrlEl.textContent    = topLabel;
+    if (topScoreEl)  topScoreEl.textContent  = 'Score ' + top._score + ' · ' + top.hits + ' visits';
+    if (avgScoreEl)  avgScoreEl.textContent  = avgScore;
+    if (avgSubEl)    avgSubEl.textContent    = 'across ' + scored.length + ' pages';
+    if (growingEl)   growingEl.textContent   = growing.length;
+    if (growingSubEl)growingSubEl.textContent= growing.length === 1 ? 'page up this period' : 'pages up this period';
+
+    el.innerHTML = scored.slice(0, 8).map(p => {
+      const cls   = trustClass(p._score);
+      const trend = p.previous_hits > 0
+        ? (p.hits > p.previous_hits * 1.1 ? '↑' : p.hits < p.previous_hits * 0.9 ? '↓' : '→')
+        : '–';
+      const trendCol = trend === '↑' ? '#16a34a' : trend === '↓' ? '#dc2626' : 'var(--muted)';
       return `<div class="page-row">
         <div class="page-url" title="${escHtml(p.url)}">${escHtml(p.url)}</div>
-        <div style="text-align:right;font-size:13px;font-weight:600">${Number(p.hits).toLocaleString()}</div>
-        <div class="page-bots">${botBadges || '<span style="color:var(--muted);font-size:11px">—</span>'}</div>
-        <div>${trendBadge(p.hits, p.previous_hits)}</div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="trust-score-pill ${cls}">${p._score}</span>
+          <span style="font-size:13px;font-weight:700;color:${trendCol}">${trend}</span>
+        </div>
+        <div style="text-align:center;font-size:12px;font-weight:700;color:var(--text)">${(p.bots||[]).filter(b=>b.hits>0).length}</div>
+        <div style="font-size:11px;color:var(--muted)">${relativeDate(p.last_seen)}</div>
+        <div><span class="trust-status ${cls}">${trustLabel(p._score)}</span></div>
       </div>`;
     }).join('');
   }
@@ -1767,9 +1865,11 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
   function renderPvTable(pages, prevRankMap, botFilter) {
     const tbody = document.getElementById('pv-table-body');
     if (!pages.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">No pages for this filter</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No pages for this filter</td></tr>';
       return;
     }
+    const maxHits = Math.max(...pages.map(p => p.hits), 1);
+    const maxBots = Math.max(...pages.map(p => (p.bots || []).length), 1);
     tbody.innerHTML = pages.map((p, i) => {
       const rank = i + 1;
       const isNew = !botFilter && p.previous_hits === 0;
@@ -1783,6 +1883,8 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
           <span style="width:5px;height:5px;border-radius:50%;background:${c};flex-shrink:0"></span>${escHtml(b.bot_name.replace('Bot','').replace('-Extended',''))} ${b.hits}
         </span>`;
       }).join('');
+      const score = calcTrustScore(p, maxHits, maxBots);
+      const cls   = trustClass(score);
       return `<tr style="cursor:pointer" onclick="openPdp('${escHtml(p.url)}', '${escHtml(fullUrl)}')">
         <td class="pg-rank">${rank}</td>
         <td class="pg-move">${move}</td>
@@ -1798,6 +1900,7 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
         </td>
         <td class="pg-bots-cell" style="white-space:normal;min-width:160px">${botBadges || '—'}</td>
         <td>${!botFilter ? trendBadge(p.hits, p.previous_hits) : '—'}</td>
+        <td><span class="trust-score-pill ${cls}" style="font-size:12px;padding:2px 8px">${score}</span></td>
       </tr>`;
     }).join('');
   }
