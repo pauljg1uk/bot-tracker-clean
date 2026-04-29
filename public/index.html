@@ -1942,7 +1942,8 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
       fetch('/api/page-title?url=' + encodeURIComponent(fullUrl), { headers: authHeaders() })
         .then(r => r.json())
         .then(t => {
-          if (t.title) document.getElementById('pdp-title').textContent = t.title;
+          const safeTitle = t.title && !/attention required|just a moment|cloudflare|enable javascript|checking your browser/i.test(t.title) ? t.title : null;
+          if (safeTitle) document.getElementById('pdp-title').textContent = safeTitle;
         }).catch(() => {});
     } else {
       document.getElementById('pdp-title').textContent = data.url === '/' ? 'Home' : data.url;
@@ -2090,8 +2091,9 @@ cardsEl.querySelectorAll('[data-client-id]').forEach(card => {
       }
       try {
         const data = await fetch('/api/page-title?url=' + encodeURIComponent(fullUrl), { headers: authHeaders() }).then(r => r.json());
-        if (el && data.title) {
-          el.textContent = data.title;
+        const safeTitle = data.title && !/attention required|just a moment|cloudflare|enable javascript|checking your browser/i.test(data.title) ? data.title : null;
+        if (el && safeTitle) {
+          el.textContent = safeTitle;
           el.classList.remove('loading');
         } else if (el) {
           el.textContent = p.url === '/' ? 'Home' : p.url;

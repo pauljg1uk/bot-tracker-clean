@@ -737,12 +737,16 @@ app.get('/api/page-title', auth, async (req, res) => {
     const https = require('https');
     const http = require('http');
     const lib = url.startsWith('https') ? https : http;
-    const req2 = lib.get(url, { timeout: 3000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (r) => {
+    const browserUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+    const req2 = lib.get(url, { timeout: 5000, headers: { 'User-Agent': browserUA, 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9' } }, (r) => {
       let data = '';
       r.on('data', chunk => { data += chunk; if (data.length > 50000) r.destroy(); });
       r.on('end', () => {
         const match = data.match(/<title[^>]*>([^<]+)<\/title>/i);
-        res.json({ title: match ? match[1].trim() : null });
+        const raw = match ? match[1].trim() : null;
+        // Cloudflare challenge / firewall pages — treat as no title
+        const blocked = raw && /attention required|just a moment|cloudflare|enable javascript|checking your browser|ddos-guard|security check/i.test(raw);
+        res.json({ title: blocked ? null : raw });
       });
     });
     req2.on('error', () => res.json({ title: null }));
